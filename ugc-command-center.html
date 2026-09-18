@@ -1,0 +1,2670 @@
+<title>UGC Command Center</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  /* Committed dark-mode SaaS look. We still honor an explicit light stamp
+     so the page never goes unreadable, but we do not follow system/browser
+     light preference — this app is deliberately dark, as asked. */
+  :root{
+    --bg:#070b12;
+    --surface:#0e141f;
+    --surface-2:#141b28;
+    --surface-3:#1a2333;
+    --border:#223047;
+    --border-soft:#182234;
+    --text:#f2f6f9;
+    --text-dim:#8ea0b5;
+    --text-faint:#586b81;
+    --accent:#3fd6a3;
+    --accent-ink:#b6f2dc;
+    --accent-soft:#0e2a22;
+    --accent-2:#4ea8ff;
+    --accent-2-ink:#c3e2ff;
+    --accent-2-soft:#10233c;
+    --accent-glow: rgba(63,214,163,0.22);
+    --accent-2-glow: rgba(78,168,255,0.18);
+    --on-accent:#04140d;
+    --good:#3ddc97;
+    --good-soft:#123027;
+    --warn:#f5b942;
+    --warn-soft:#3a2c10;
+    --critical:#ff6161;
+    --critical-soft:#3a1717;
+    --info:#4ea8ff;
+    --info-soft:#10233c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 16px 40px -20px rgba(0,0,0,0.7);
+    --radius: 16px;
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f8f7;
+    --surface:#ffffff;
+    --surface-2:#edf3f1;
+    --surface-3:#e2ebe8;
+    --border:#d7e3df;
+    --border-soft:#e6efec;
+    --text:#101d1b;
+    --text-dim:#4d6360;
+    --text-faint:#7c928d;
+    --accent:#0f9d70;
+    --accent-ink:#065c40;
+    --accent-soft:#dcf5ea;
+    --accent-2:#1f7ae0;
+    --accent-2-ink:#0b3f7a;
+    --accent-2-soft:#dceafd;
+    --accent-glow: rgba(15,157,112,0.16);
+    --accent-2-glow: rgba(31,122,224,0.14);
+    --on-accent:#ffffff;
+    --good:#1f8f5f;
+    --good-soft:#dcf2e6;
+    --warn:#b8790f;
+    --warn-soft:#faecd2;
+    --critical:#c73b3b;
+    --critical-soft:#fbdede;
+    --info:#1f7ae0;
+    --info-soft:#dceafd;
+    --shadow: 0 1px 2px rgba(16,29,27,0.06), 0 8px 24px -12px rgba(16,29,27,0.16);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Public Sans', system-ui, sans-serif;
+  }
+  h1,h2,h3,.display{ font-family:'Fraunces', Georgia, serif; text-wrap:balance; letter-spacing:-0.01em; }
+  .mono, .num{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  a{color:var(--accent);}
+  button{font-family:inherit;}
+  ::selection{ background:var(--accent); color:var(--on-accent); }
+
+  #app{ display:flex; min-height:100%; max-width:1500px; margin:0 auto; }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar{ width:216px; flex-shrink:0; padding:20px 14px; display:flex; flex-direction:column; gap:4px; position:sticky; top:0; align-self:flex-start; height:100vh; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:6px 10px 20px 10px; }
+  .brand-mark{ width:32px;height:32px;border-radius:9px; background:linear-gradient(155deg, var(--accent), var(--accent-2)); display:flex;align-items:center;justify-content:center; color:var(--on-accent);font-family:'Fraunces',serif;font-weight:700;font-size:16px; flex-shrink:0; }
+  .brand-name{font-family:'Fraunces',serif;font-weight:600;font-size:16.5px;line-height:1.15;}
+  .brand-sub{font-size:11px;color:var(--text-faint);letter-spacing:.03em;text-transform:uppercase;}
+
+  .navitem{ display:flex;align-items:center;gap:10px; padding:9px 12px;border-radius:10px; color:var(--text-dim);font-size:14.5px;font-weight:600; cursor:pointer;border:1px solid transparent; user-select:none; }
+  .navitem:hover{background:var(--surface-2);}
+  .navitem.active{background:var(--surface);border-color:var(--border);color:var(--text);box-shadow:var(--shadow), 0 0 0 1px var(--accent-glow);}
+  .navitem svg{width:17px;height:17px;flex-shrink:0;}
+  .navitem .count{ margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px; color:var(--text-faint);background:var(--surface-2);border-radius:20px; padding:1px 7px; }
+  .navitem.active .count{color:var(--accent-ink);background:var(--accent-soft);}
+  #sidebar-foot{ margin-top:auto;padding:10px;font-size:11.5px;color:var(--text-faint); border-top:1px solid var(--border);padding-top:14px;line-height:1.5; }
+
+  /* ---------- Main ---------- */
+  #main{ flex:1; min-width:0; padding:22px 26px 60px 22px; }
+
+  #qu-box{
+    background:linear-gradient(155deg, var(--surface-3), var(--surface));
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow);
+  }
+  #qu-row{display:flex;gap:8px;align-items:center;}
+  #qu-icon{ width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg, var(--accent-soft), var(--accent-2-soft));color:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  #qu-icon svg{width:17px;height:17px;}
+  #qu-input{
+    flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
+    padding:10px 13px;font-size:13.5px;color:var(--text);font-family:inherit;
+  }
+  #qu-input:focus{outline:2px solid var(--accent);outline-offset:0;}
+  #qu-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  #qu-hint{font-size:11.5px;color:var(--text-faint);margin-top:8px;}
+  #qu-log{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+  .qu-line{font-size:12px;color:var(--text-dim);display:flex;gap:6px;align-items:flex-start;}
+  .qu-line .ok{color:var(--good);}
+  .qu-line .bad{color:var(--critical);}
+
+  #topbar{ display:flex;align-items:baseline;justify-content:space-between; gap:16px;margin-bottom:14px;flex-wrap:wrap; }
+  #topbar h1{font-size:25px;margin:0;font-weight:600;}
+  #topbar .sub{color:var(--text-dim);font-size:13.5px;margin-top:2px;}
+
+  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .btn{ display:inline-flex;align-items:center;gap:6px; background:var(--surface);border:1px solid var(--border);color:var(--text); padding:7px 13px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer; white-space:nowrap; }
+  .btn:hover{background:var(--surface-2);}
+  .btn.primary{background:linear-gradient(135deg, var(--accent), var(--accent-2));border-color:var(--accent);color:var(--on-accent);}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--text-dim);}
+  .btn.ghost:hover{background:var(--surface-2);}
+  .btn.danger{color:var(--critical);}
+  .btn svg{width:14px;height:14px;}
+  .btn.sm{padding:4px 9px;font-size:12px;}
+
+  #global-actions{ display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-start; }
+  #global-search{
+    display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);
+    border-radius:9px;padding:6px 11px;flex:1;min-width:180px;max-width:320px;
+  }
+  #global-search svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;}
+  #global-search input{ background:transparent;border:none;outline:none;color:var(--text);font-size:13px;width:100%; }
+
+  #add-menu-wrap{position:relative;flex-shrink:0;}
+  .add-btn{ background:var(--accent-soft);border-color:var(--accent-soft);color:var(--accent-ink); }
+  .add-btn:hover{ background:linear-gradient(135deg, var(--accent), var(--accent-2));border-color:var(--accent);color:var(--on-accent); }
+  .add-btn .chev{width:10px;height:10px;opacity:.75;transition:transform .15s;}
+  .add-btn.open .chev{transform:rotate(180deg);}
+  .popover{
+    position:absolute;top:calc(100% + 6px);left:0;min-width:172px;
+    background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 20px 45px -18px rgba(0,0,0,.55);padding:6px;
+    display:none;flex-direction:column;gap:1px;z-index:40;
+  }
+  .popover.open{display:flex;}
+  .popover-item{ padding:8px 10px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer; }
+  .popover-item:hover{background:var(--surface-2);color:var(--accent-ink);}
+
+  #today-header{ display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap; }
+  #greeting{ font-family:'Fraunces',serif;font-size:21px;font-weight:600;color:var(--text); }
+  #workload-summary{ font-size:13.5px;color:var(--text-dim);margin-top:4px; }
+  #today-date{ font-size:11.5px;color:var(--text-faint);white-space:nowrap;padding-top:5px; font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;text-transform:uppercase; }
+
+  .statrow{ display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px;margin-bottom:18px; }
+  .stat-progress{display:flex;align-items:center;gap:8px;margin-top:9px;}
+  .stat-progress-track{flex:1;height:4px;border-radius:4px;background:var(--surface-3);overflow:hidden;}
+  .stat-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:4px;}
+  .stat-progress-pct{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);flex-shrink:0;}
+  .stat{ background:var(--surface);border:1px solid var(--border);border-radius:var(--radius); padding:15px 17px;box-shadow:var(--shadow); position:relative; overflow:hidden; }
+  .stat::before{ content:"";position:absolute;top:0;left:0;width:3px;height:100%;background:var(--stat-c, var(--accent)); }
+  .stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:600;}
+  .stat .v{font-family:'IBM Plex Mono',monospace;font-size:25px;font-weight:600;margin-top:6px;}
+  .stat .v.accent{color:var(--accent);}
+  .stat .v.good{color:var(--good);}
+  .stat .v.warn{color:var(--warn);}
+  .stat .v.critical{color:var(--critical);}
+  .stat .sub{font-size:11.5px;color:var(--text-faint);margin-top:3px;}
+
+  .panel{ background:var(--surface);border:1px solid var(--border);border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:18px; overflow:hidden; }
+  .panel-head{ display:flex;align-items:center;justify-content:space-between;gap:10px; padding:14px 16px;border-bottom:1px solid var(--border); }
+  .panel-head h2{font-size:15px;margin:0;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .panel-head h2 .n{color:var(--text-faint);font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;}
+  .panel-body{padding:4px 0;}
+  .panel-body.pad{padding:14px 16px;}
+
+  .row-item{ display:flex;align-items:center;gap:12px;padding:10px 16px; border-bottom:1px solid var(--border-soft);font-size:13.5px; }
+  .row-item:last-child{border-bottom:none;}
+  .row-item:hover{background:var(--surface-2);cursor:pointer;}
+  .row-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .dot.critical{background:var(--critical);} .dot.warn{background:var(--warn);} .dot.good{background:var(--good);}
+  .dot.info{background:var(--info);} .dot.neutral{background:var(--text-faint);}
+  .row-item .title{font-weight:600;flex-shrink:0;}
+  .row-item .meta{color:var(--text-dim);font-size:12.5px;}
+  .row-item .right{margin-left:auto;font-size:12px;color:var(--text-faint);flex-shrink:0;white-space:nowrap;}
+
+  .empty{padding:30px 16px;text-align:center;color:var(--text-faint);font-size:13.5px;}
+  .empty .big{font-family:'Fraunces',serif;font-size:16.5px;color:var(--text-dim);margin-bottom:5px;}
+
+  .badge{ display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px; font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap; }
+  .badge.st-idea{background:var(--surface-3);color:var(--text-dim);}
+  .badge.st-film{background:var(--info-soft);color:var(--info);}
+  .badge.st-edit{background:var(--accent-soft);color:var(--accent-ink);}
+  .badge.st-submit{background:var(--warn-soft);color:var(--warn);}
+  .badge.st-approval{background:var(--warn-soft);color:var(--warn);}
+  .badge.st-ready{background:var(--info-soft);color:var(--info);}
+  .badge.st-posted{background:var(--good-soft);color:var(--good);}
+  .badge.st-paid{background:var(--good);color:#062315;}
+  .badge.st-active{background:var(--good-soft);color:var(--good);}
+  .badge.st-pendingcontract{background:var(--warn-soft);color:var(--warn);}
+  .badge.st-completed{background:var(--surface-3);color:var(--text-dim);}
+  .badge.st-cancelled{background:var(--critical-soft);color:var(--critical);}
+  .badge.st-approved{background:var(--good-soft);color:var(--good);}
+  .badge.st-revisionsneeded{background:var(--critical-soft);color:var(--critical);}
+  .badge.st-notsubmitted{background:var(--surface-3);color:var(--text-faint);}
+  .badge.st-notstarted{background:var(--surface-3);color:var(--text-faint);}
+  .badge.st-inprogress{background:var(--info-soft);color:var(--info);}
+  .badge.st-complete{background:var(--good-soft);color:var(--good);}
+  .badge.st-na{background:var(--surface-3);color:var(--text-faint);}
+  .badge.st-pending{background:var(--warn-soft);color:var(--warn);}
+  .badge.st-expected{background:var(--info-soft);color:var(--info);}
+  .badge.st-inactive{background:var(--surface-3);color:var(--text-faint);}
+  .badge.st-suspended{background:var(--critical-soft);color:var(--critical);}
+  .badge.st-ontrack{background:var(--good-soft);color:var(--good);}
+  .badge.st-behind{background:var(--critical-soft);color:var(--critical);}
+  .badge.example{background:var(--surface-3);color:var(--text-faint);border:1px dashed var(--border);}
+
+  .chip{ display:inline-flex;padding:2px 8px;border-radius:20px;background:var(--surface-3); color:var(--text-dim);font-size:11px;font-weight:600; }
+
+  .fchip{ padding:4px 11px;border-radius:20px;border:1px solid var(--border); font-size:12px;font-weight:600;cursor:pointer;color:var(--text-dim);background:var(--surface); }
+  .fchip.active{background:var(--text);border-color:var(--text);color:var(--bg);}
+
+  /* ---------- Deal cards ---------- */
+  .cardgrid{ display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px; }
+  .dealcard{ background:var(--surface);border:1px solid var(--border);border-radius:var(--radius); padding:16px;box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;gap:10px; transition:border-color .15s; }
+  .dealcard:hover{border-color:var(--accent);box-shadow:var(--shadow), 0 0 0 1px var(--accent-glow);}
+  .dealcard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .dealcard-brand{font-family:'Fraunces',serif;font-weight:600;font-size:17px;}
+  .dealcard-campaign{font-size:11.5px;color:var(--text-faint);margin-top:1px;}
+  .dealcard-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:12.5px;}
+  .dealcard-grid .k{color:var(--text-faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .dealcard-grid .v{color:var(--text);margin-top:1px;}
+  .dealcard-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--text-faint);border-top:1px solid var(--border-soft);padding-top:10px;}
+  .dealcard-foot span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+  .dealcard-view-btn{ flex-shrink:0;background:none;border:none;color:var(--accent);font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;padding:2px 0 2px 8px; }
+  .dealcard-view-btn:hover{ color:var(--accent-2);text-decoration:underline; }
+  .progress-wrap{display:flex;flex-direction:column;gap:5px;}
+  .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text-faint);}
+  .progress-track{height:6px;border-radius:6px;background:var(--surface-3);overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:6px;}
+
+  .cycle-wrap{ display:flex;flex-direction:column;gap:6px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:10px;padding:9px 11px; }
+  .cycle-row{ display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--text-dim); }
+  .cycle-item b{ color:var(--text);font-size:13px; }
+  .cycle-arrow{ color:var(--text-faint); }
+  .cycle-period{ font-size:10.5px;color:var(--text-faint); }
+
+  /* ---------- Deal Detail (mini command center) ---------- */
+  .dd-back{ display:inline-flex;align-items:center;gap:5px;color:var(--text-dim);font-size:12.5px;font-weight:600;cursor:pointer;margin-bottom:12px; }
+  .dd-back:hover{color:var(--text);}
+  .dd-grid{ display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start; }
+  .dd-col{ display:flex;flex-direction:column;gap:16px;min-width:0; }
+  .dd-block{ padding:14px 16px; }
+  .dd-block + .dd-block{ border-top:1px solid var(--border-soft); }
+  .dd-label{ font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;margin-bottom:5px; }
+  .dd-text{ font-size:13px;color:var(--text-dim);line-height:1.55;white-space:pre-wrap; }
+  .dd-empty-text{ font-size:12.5px;color:var(--text-faint);font-style:italic; }
+  .dd-links a{ display:block;color:var(--info);font-size:12.5px;text-decoration:none;word-break:break-all;margin-top:2px; }
+  .dd-links a:hover{ text-decoration:underline; }
+  .dd-paystat-row{ display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:2px; }
+  .dd-paystat{ background:var(--surface-2);border:1px solid var(--border-soft);border-radius:10px;padding:9px 11px; }
+  .dd-paystat .k{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);font-weight:700;}
+  .dd-paystat .v{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;margin-top:3px;color:var(--text);}
+  .dd-acct-chip{ display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:20px;padding:4px 10px 4px 4px;font-size:12px;margin:0 6px 6px 0; }
+  .dd-acct-chip .av{width:20px;height:20px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0;}
+  .dd-content-row{ display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-soft);cursor:pointer;font-size:12.5px; }
+  .dd-content-row:last-child{border-bottom:none;}
+  .dd-content-row:hover{background:var(--surface-2);margin:0 -8px;padding:9px 8px;border-radius:8px;}
+  .dd-content-row .name{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dd-content-row .meta{color:var(--text-faint);font-size:11.5px;flex-shrink:0;}
+  .dd-notes-field textarea{ background:var(--surface-2);border:1px solid var(--border);border-radius:8px; padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;width:100%;resize:vertical;min-height:64px; }
+  .dd-notes-field textarea:focus{outline:2px solid var(--accent);outline-offset:0;}
+  @media (max-width: 980px){
+    .dd-grid{grid-template-columns:1fr;}
+  }
+
+  /* ---------- Kanban ----------
+     All 7 stages fit within the available width at once on desktop: the
+     board is a 7-column grid (minmax(0,1fr) so columns shrink together
+     and never force a scrollbar), not a fixed-width flex row. Below the
+     app's existing mobile breakpoint we fall back to the old horizontal-
+     scroll flex layout, since 7 columns can't stay readable on a phone. */
+  #kanban-wrap{overflow-x:visible;padding-bottom:8px;}
+  #kanban{display:grid;grid-template-columns:repeat(7, minmax(0,1fr));gap:8px;align-items:start;}
+  .kcol{ min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius); box-shadow:var(--shadow); display:flex;flex-direction:column;max-height:calc(100vh - 320px);min-height:160px; }
+  .kcol.dragover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent-glow);}
+  .kcol-head{ padding:10px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px; font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--text-dim); }
+  .kcol-head span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .kcol-head .n{font-family:'IBM Plex Mono',monospace;color:var(--text-faint);font-weight:500;flex-shrink:0;}
+  .kcol-body{padding:7px;display:flex;flex-direction:column;gap:7px;overflow-y:auto;overflow-x:hidden;min-width:0;}
+  .kcard{ background:var(--surface-2);border:1px solid var(--border-soft);border-radius:11px;padding:9px 10px; cursor:grab;font-size:12.5px;display:flex;flex-direction:column;gap:5px;min-width:0; }
+  .kcard:active{cursor:grabbing;}
+  .kcard.dragging{opacity:.4;}
+  .kcard .kbrand{font-weight:700;color:var(--accent-ink);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .kcard .kname{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .kcard .kmeta{color:var(--text-faint);font-size:11px;display:flex;justify-content:space-between;gap:6px;min-width:0;}
+  .kcard .kmeta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .kcard .kmeta .kdue{flex-shrink:0;}
+  .kcard .kmeta.overdue{color:var(--critical);font-weight:600;}
+  .kcard a{color:var(--info);font-size:11px;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+  .kcard a:hover{text-decoration:underline;}
+  .kcard .kapproval{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:6px;display:inline-block;width:fit-content;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  .filterbar{ display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px; }
+  .filterbar label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);font-weight:600;margin-right:2px;}
+  .filterbar select{ background:var(--surface);border:1px solid var(--border);border-radius:8px; padding:7px 10px;font-size:13px;color:var(--text);font-family:inherit;cursor:pointer; }
+  .filterbar select:focus{outline:2px solid var(--accent);outline-offset:0;}
+  .filterbar .clearfilters{font-size:12px;color:var(--accent-ink);cursor:pointer;background:none;border:none;font-weight:600;padding:4px 2px;}
+  .filterbar .clearfilters:hover{text-decoration:underline;}
+
+  /* ---------- Today's Focus: single vertical feed ---------- */
+  .focus-panel{ background:var(--surface);border:1px solid var(--border);border-radius:var(--radius); box-shadow:var(--shadow);overflow:hidden; }
+  .focus-head{ display:flex;align-items:center;justify-content:space-between;gap:12px; padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap; }
+  .focus-head h2{ font-size:16px;margin:0;font-weight:600;display:flex;align-items:center;gap:8px; }
+  .focus-head h2 .n{ color:var(--text-faint);font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px; }
+  .focus-filters{ display:flex;gap:6px;flex-wrap:wrap; }
+  .focus-pill{ padding:5px 12px;border-radius:20px;border:1px solid var(--border); font-size:11.5px;font-weight:700;letter-spacing:.02em;cursor:pointer; color:var(--text-dim);background:var(--surface-2); }
+  .focus-pill:hover{ border-color:var(--accent); }
+  .focus-pill.active{ background:var(--accent);border-color:var(--accent);color:var(--on-accent); }
+  .focus-feed{ max-height:560px;overflow-y:auto; }
+  .focus-empty{ padding:34px 16px;text-align:center;color:var(--text-faint);font-size:13.5px; }
+  .focus-empty .big{ font-family:'Fraunces',serif;font-size:16.5px;color:var(--text-dim);margin-bottom:5px; }
+
+  .frow{ display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-soft); }
+  .frow:last-child{ border-bottom:none; }
+  .frow.overdue{ background:rgba(255,97,97,0.05);box-shadow:inset 3px 0 0 var(--critical); }
+  .frow.due-today{ box-shadow:inset 3px 0 0 var(--warn); }
+  .frow.done{ opacity:.5; }
+  .frow.done .frow-title{ text-decoration:line-through; }
+  .frow.clickable{ cursor:pointer; }
+  .frow.clickable:hover{ background:var(--surface-2); }
+  .frow input[type=checkbox]{ accent-color:var(--accent);width:15px;height:15px;flex-shrink:0;cursor:pointer; }
+  .frow-chev{ width:15px;flex-shrink:0;text-align:center;color:var(--text-faint);font-size:15px; }
+  .fcat{ flex-shrink:0;width:50px;text-align:center;padding:3px 0;border-radius:7px; font-size:9.5px;font-weight:800;letter-spacing:.03em; }
+  .fcat.film{ background:var(--info-soft);color:var(--info); }
+  .fcat.edit{ background:var(--accent-soft);color:var(--accent-ink); }
+  .fcat.submit{ background:var(--warn-soft);color:var(--warn); }
+  .fcat.post{ background:var(--good-soft);color:var(--good); }
+  .fcat.followup{ background:var(--surface-3);color:var(--text-dim); }
+  .frow-main{ flex:1;min-width:0;display:flex;flex-direction:column;gap:2px; }
+  .frow-eyebrow{ font-size:10.5px;font-weight:700;letter-spacing:.03em;color:var(--text-faint);text-transform:uppercase; }
+  .frow-title{ font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .frow-sub{ display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px; }
+  .frow-due{ font-size:11.5px;color:var(--text-faint); }
+  .frow-status{ display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;white-space:nowrap;flex-shrink:0; }
+  .frow-status .d{ width:7px;height:7px;border-radius:50%; }
+  .frow-status.overdue{ color:var(--critical); } .frow-status.overdue .d{ background:var(--critical); }
+  .frow-status.today{ color:var(--warn); } .frow-status.today .d{ background:var(--warn); }
+  .frow-status.tomorrow{ color:var(--info); } .frow-status.tomorrow .d{ background:var(--info); }
+  .frow-status.upcoming{ color:var(--text-dim); } .frow-status.upcoming .d{ background:var(--text-faint); }
+  .frow-status.none{ color:var(--text-faint); } .frow-status.none .d{ background:var(--text-faint); }
+  .frow-status.done{ color:var(--good); } .frow-status.done .d{ background:var(--good); }
+  .frow-del{ color:var(--text-faint);cursor:pointer;flex-shrink:0;font-size:12px; }
+  .frow-del:hover{ color:var(--critical); }
+
+  /* ---------- Accounts cards ---------- */
+  .acctcard{ background:var(--surface);border:1px solid var(--border);border-radius:var(--radius); padding:15px;box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;gap:9px; }
+  .acctcard:hover{border-color:var(--accent);}
+  .acct-top{display:flex;align-items:center;gap:10px;}
+  .acct-avatar{ width:38px;height:38px;border-radius:10px;background:var(--surface-3);display:flex;align-items:center;justify-content:center; font-family:'Fraunces',serif;font-weight:700;color:var(--accent);flex-shrink:0; }
+  .acct-handle{font-weight:700;font-size:14px;}
+  .acct-plat{font-size:11px;color:var(--text-faint);}
+  .acct-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);}
+  .acct-row .k{color:var(--text-faint);}
+  .acct-progress{border-top:1px solid var(--border-soft);padding-top:9px;display:flex;flex-direction:column;gap:7px;}
+  .acct-progress-note{font-size:11.5px;color:var(--text-faint);line-height:1.45;}
+
+  /* Tables (payments) */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{ text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em; color:var(--text-faint);font-weight:700;padding:9px 14px;border-bottom:1px solid var(--border); white-space:nowrap; }
+  tbody td{padding:10px 14px;border-bottom:1px solid var(--border-soft);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--surface-2);cursor:pointer;}
+  td.num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .cellmain{font-weight:600;}
+  .cellsub{color:var(--text-faint);font-size:11.5px;}
+  .tablewrap{overflow-x:auto;}
+
+  /* Modal */
+  #modal-backdrop{ position:fixed;inset:0;background:rgba(4,5,6,.6);backdrop-filter:blur(2px); display:none;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow-y:auto;z-index:50; }
+  #modal-backdrop.open{display:flex;}
+  #modal{ background:var(--surface);border:1px solid var(--border);border-radius:16px; width:100%;max-width:460px;box-shadow:0 30px 70px -20px rgba(0,0,0,.6); }
+  #modal.wide{max-width:660px;}
+  #modal-head{ display:flex;align-items:center;justify-content:space-between;padding:16px 20px; border-bottom:1px solid var(--border); }
+  #modal-head h3{margin:0;font-size:17px;}
+  #modal-body{padding:18px 20px;display:flex;flex-direction:column;gap:13px;max-height:66vh;overflow-y:auto;}
+  #modal-foot{display:flex;justify-content:space-between;gap:8px;padding:14px 20px;border-top:1px solid var(--border);}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:12px;font-weight:700;color:var(--text-dim);}
+  .field input, .field select, .field textarea{ background:var(--surface-2);border:1px solid var(--border);border-radius:8px; padding:8px 10px;font-size:13.5px;color:var(--text);font-family:inherit;width:100%; }
+  .field textarea{resize:vertical;min-height:50px;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);outline-offset:0;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .form-section{ font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-ink); font-weight:700;margin-top:6px;padding-top:12px;border-top:1px solid var(--border-soft); }
+  .form-section:first-child{margin-top:0;padding-top:0;border-top:none;}
+  .assoc-list{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+  .assoc-item{display:flex;justify-content:space-between;gap:8px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:8px;padding:7px 10px;font-size:12px;}
+
+  /* New Video quick-add form */
+  .nv-toggle{ font-size:12.5px;font-weight:700;color:var(--accent-ink);cursor:pointer;padding:2px 0;width:fit-content;user-select:none; }
+  .nv-toggle:hover{text-decoration:underline;}
+  .nv-advanced{display:flex;flex-direction:column;gap:13px;}
+
+  .icon-x{cursor:pointer;color:var(--text-faint);width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:8px;}
+  .icon-x:hover{background:var(--surface-2);color:var(--text);}
+
+  #toast{ position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px); background:var(--text);color:var(--bg);padding:9px 16px;border-radius:9px;font-size:13px; box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;z-index:60;max-width:80vw;text-align:center; }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  #banner{ display:none;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn); border-radius:10px;padding:9px 14px;font-size:12.5px;margin-bottom:16px; }
+  #banner.show{display:block;}
+
+  @media (max-width: 980px){
+    .fcat{width:42px;font-size:8.5px;}
+  }
+  @media (max-width: 860px){
+    #app{flex-direction:column;}
+    #sidebar{ width:100%;height:auto;position:static;flex-direction:row;overflow-x:auto; padding:14px 14px 8px 14px;gap:6px; }
+    .brand{padding:2px 6px 2px 0;}
+    .brand-sub{display:none;}
+    #sidebar-foot{display:none;}
+    .navitem{flex-shrink:0;}
+    #main{padding:16px 14px 60px 14px;}
+    .field-row{grid-template-columns:1fr;}
+    .frow-sub{flex-direction:column;align-items:flex-start;gap:2px;}
+    #qu-row{flex-wrap:wrap;}
+    /* Below this width, 7 equal-fraction columns get too cramped to read —
+       fall back to the original horizontal-scroll board instead. */
+    #kanban-wrap{overflow-x:auto;}
+    #kanban{display:flex;gap:10px;min-width:max-content;align-items:flex-start;}
+    .kcol{width:220px;flex-shrink:0;min-width:220px;}
+  }
+</style>
+
+<div id="app">
+  <nav id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">U</div>
+      <div>
+        <div class="brand-name">UGC Ops</div>
+        <div class="brand-sub">Command Center</div>
+      </div>
+    </div>
+    <div class="navitem" data-tab="today">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m9 15 2 2 4-4"/></svg>
+      <span>Today</span><span class="count" id="cnt-today">0</span>
+    </div>
+    <div class="navitem" data-tab="deals">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 22H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2h-1"/><path d="M8 13h6M8 17h4"/></svg>
+      <span>Deals</span><span class="count" id="cnt-deals">0</span>
+    </div>
+    <div class="navitem" data-tab="content">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="m7 9 4 3-4 3z"/></svg>
+      <span>Content</span><span class="count" id="cnt-content">0</span>
+    </div>
+    <div class="navitem" data-tab="payments">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5a2.5 2.5 0 0 1 2.5-1h.5a2 2 0 1 1 0 4h-1a2 2 0 1 0 0 4h.5a2.5 2.5 0 0 0 2.5-1"/></svg>
+      <span>Money</span><span class="count" id="cnt-payments">0</span>
+    </div>
+    <div class="navitem" data-tab="accounts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="10.5" r="2"/><path d="M5.5 16c.7-1.8 2-2.5 3-2.5s2.3.7 3 2.5M14 9h5M14 13h5M14 17h3"/></svg>
+      <span>Accounts</span><span class="count" id="cnt-accounts">0</span>
+    </div>
+    <div id="sidebar-foot">Every edit here — yours or Claude's — saves straight through. Close this and reopen it anytime; nothing resets.</div>
+  </nav>
+
+  <main id="main">
+    <div id="qu-box">
+      <div id="qu-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+        Quick Update
+      </div>
+      <div id="qu-row">
+        <div id="qu-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <input id="qu-input" type="text" placeholder='Try: "Posted yope video 4" · "ReBet video 2 has 8400 views" · "yope paid me $100" · "move XXYY video 1 to ready" · "add task: film 2 yope videos tomorrow"' />
+        <button class="btn primary" onclick="submitQuickUpdate()">Update</button>
+      </div>
+      <div id="qu-hint">Describe what happened in plain English — I'll figure out which deal, video, task, or payment it applies to.</div>
+      <div id="qu-log"></div>
+    </div>
+
+    <div id="banner"></div>
+
+    <div id="global-actions">
+      <div id="global-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search-input" type="text" placeholder="Search brand, video, username…" oninput="onSearchInput()">
+      </div>
+      <div id="add-menu-wrap">
+        <button class="btn add-btn" id="add-menu-btn" onclick="toggleAddMenu(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div id="add-menu" class="popover">
+          <div class="popover-item" onclick="chooseAdd('deals')">Deal</div>
+          <div class="popover-item" onclick="chooseAdd('content')">Video</div>
+          <div class="popover-item" onclick="chooseAdd('tasks')">Task</div>
+          <div class="popover-item" onclick="chooseAdd('payments')">Payment</div>
+          <div class="popover-item" onclick="chooseAdd('accounts')">Account</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="topbar">
+      <div>
+        <h1 id="view-title">Today</h1>
+        <div class="sub" id="view-sub">Loading your workload&hellip;</div>
+      </div>
+      <div class="toolbar" id="view-actions"></div>
+    </div>
+    <div id="view-root"></div>
+  </main>
+</div>
+
+<div id="modal-backdrop">
+  <div id="modal">
+    <div id="modal-head">
+      <h3 id="modal-title">Add</h3>
+      <div class="icon-x" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </div>
+    </div>
+    <div id="modal-body"></div>
+    <div id="modal-foot">
+      <button class="btn danger ghost" id="modal-delete" onclick="deleteCurrent()">Delete</button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn primary" onclick="saveCurrent()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+
+  // ===================================================================
+  // Schemas
+  // ===================================================================
+  var SCHEMAS = {
+    deals: {
+      label: "Deal", collection: "deals",
+      fields: [
+        {section:"Overview"},
+        {key:"brand", label:"Brand", type:"text", required:true},
+        {key:"campaign", label:"Campaign", type:"text"},
+        {key:"status", label:"Status", type:"select", options:["Active","Pending Contract","Completed","Cancelled"], default:"Active"},
+        {key:"account", label:"Account Handle(s)", type:"text", placeholder:"@handle"},
+        {key:"platforms", label:"Platforms", type:"text", placeholder:"TikTok, Instagram"},
+        {key:"startDate", label:"Start Date", type:"date"},
+        {key:"endDate", label:"End Date", type:"date"},
+        {key:"deadline", label:"Next Deadline", type:"date"},
+        {key:"nextAction", label:"Next Action", type:"textarea"},
+        {section:"Compensation"},
+        {key:"guaranteedPay", label:"Base / Guaranteed Pay ($)", type:"number"},
+        {key:"payFrequency", label:"Pay Frequency", type:"select", options:["Monthly","Weekly","Per Video","One-Time","None"], default:"Monthly"},
+        {key:"cpmPay", label:"CPM / Performance Bonus", type:"text", placeholder:"e.g. $1 CPM + milestone bonuses"},
+        {section:"Requirements"},
+        {key:"requiredVideos", label:"Video Requirement (description)", type:"text", placeholder:"e.g. 10 TikTok + 10 IG / month"},
+        {key:"requiredVideosCount", label:"Target Count (per cycle)", type:"number"},
+        {key:"postingFrequency", label:"Posting Frequency", type:"text"},
+        {key:"cycleType", label:"Workload Cycle", type:"select", options:["Weekly","Monthly","Fixed Window","None"], default:"None",
+          hint:"How the Target Count repeats. Weekly/Monthly re-anchor on Start Date. Fixed Window runs Start Date → Next Deadline (e.g. a trial)."},
+        {section:"Contract Details"},
+        {key:"contractInfo", label:"Contract Info", type:"textarea"},
+        {key:"deliverablesDetail", label:"Deliverables", type:"textarea"},
+        {key:"contentRequirements", label:"Content Requirements", type:"textarea"},
+        {key:"postingSchedule", label:"Posting Schedule", type:"textarea"},
+        {key:"paymentStructure", label:"Payment Structure", type:"textarea"},
+        {key:"contractRules", label:"Important Contract Rules", type:"textarea"},
+        {key:"notes", label:"Notes", type:"textarea"},
+        {key:"links", label:"Links (one per line)", type:"textarea"},
+      ]
+    },
+    content: {
+      label: "Video", collection: "content",
+      fields: [
+        {section:"Overview"},
+        {key:"brand", label:"Brand / Deal", type:"text", required:true, datalist:"deals"},
+        {key:"name", label:"Video Title / Number", type:"text", required:true, placeholder:"e.g. Video 4"},
+        {key:"platform", label:"Platform", type:"text", placeholder:"TikTok"},
+        {key:"account", label:"Posting Account", type:"accountselect", hint:"Only accounts matching this video's Brand and Platform are shown."},
+        {key:"status", label:"Pipeline Stage", type:"select", options:["IDEA","FILM","EDIT","SUBMIT","APPROVAL","READY","POSTED"], default:"IDEA"},
+        {section:"Dates"},
+        {key:"dueDate", label:"Due Date", type:"date"},
+        {key:"postedDate", label:"Post Date", type:"date"},
+        {section:"Creative"},
+        {key:"referenceLink", label:"Reference Video / Link", type:"url"},
+        {key:"hook", label:"Hook / Concept", type:"textarea"},
+        {key:"script", label:"Script / Notes", type:"textarea"},
+        {section:"Approval & Posting"},
+        {key:"approvalStatus", label:"Approval Status", type:"select", options:["Not Submitted","Pending","Approved","Revisions Needed"], default:"Not Submitted"},
+        {key:"postedUrl", label:"Posted URL", type:"url"},
+        {key:"views", label:"Current Views", type:"number"},
+      ]
+    },
+    payments: {
+      label: "Payment", collection: "payments",
+      fields: [
+        {key:"brand", label:"Brand", type:"text", required:true, datalist:"deals"},
+        {key:"type", label:"Type", type:"select", options:["Base","CPM","Bonus","Per Video","Referral","Other"], default:"Base"},
+        {key:"amount", label:"Amount ($)", type:"number", required:true},
+        {key:"status", label:"Status", type:"select", options:["Expected","Pending","Paid"], default:"Pending"},
+        {key:"dateEarned", label:"Date Earned", type:"date"},
+        {key:"datePaid", label:"Date Paid", type:"date"},
+        {key:"notes", label:"Notes", type:"textarea"},
+      ]
+    },
+    accounts: {
+      label: "Account", collection: "accounts",
+      fields: [
+        {key:"platform", label:"Platform", type:"text", required:true, placeholder:"TikTok"},
+        {key:"username", label:"Username", type:"text", required:true, placeholder:"@handle"},
+        {key:"brand", label:"Associated Brand", type:"text", datalist:"deals"},
+        {key:"accountStatus", label:"Account Status", type:"select", options:["Active","Inactive","Suspended"], default:"Active"},
+        {key:"warmupStatus", label:"Warm-up Status", type:"select", options:["Not Started","In Progress","Complete","N/A"], default:"Not Started"},
+        {key:"postingRequirements", label:"Posting Requirement", type:"textarea", placeholder:"e.g. 2 posts/day"},
+        {key:"lastPost", label:"Last Post Date", type:"date"},
+        {key:"notes", label:"Notes", type:"textarea"},
+      ]
+    },
+    tasks: {
+      label: "Task", collection: "tasks",
+      fields: [
+        {key:"category", label:"Category", type:"select", options:["Film","Edit","Submit","Post","FollowUp"], default:"Film", optionLabels:{FollowUp:"Follow Up"}},
+        {key:"text", label:"Task", type:"text", required:true, placeholder:"e.g. Film yope videos 8 and 9"},
+        {key:"brand", label:"Brand (optional)", type:"text", datalist:"deals"},
+        {key:"dueDate", label:"Due Date", type:"date"},
+      ]
+    }
+  };
+
+  var STATUS_SLUG = function(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,""); };
+  var TASK_CATS = ["Film","Edit","Submit","Post","FollowUp"];
+  var TASK_LABEL = {Film:"Film", Edit:"Edit", Submit:"Submit", Post:"Post", FollowUp:"Follow Up"};
+  var STAGE_MAP = {
+    idea:"IDEA", film:"FILM", edit:"EDIT", submit:"SUBMIT", approval:"APPROVAL",
+    ready:"READY", posted:"POSTED", post:"POSTED", live:"POSTED", published:"POSTED"
+  };
+
+  // ===================================================================
+  // State
+  // ===================================================================
+  var state = { deals: [], content: [], payments: [], accounts: [], tasks: [], settings: {}, ready:false, dbAvailable: null };
+  var activeTab = "today";
+  var searchQuery = "";
+  var currentEdit = null;
+  var db = null, sampleFn = null, seedChecked = false;
+  var focusFilter = "All"; // Today's Focus filter pill: All | Film | Edit | Submit | Post | FollowUp
+  var dealDetailId = null; // when set (and activeTab==="deals"), shows the deal detail view instead of the deal list
+  var accountDetailId = null; // when set (and activeTab==="accounts"), shows the account detail view instead of the account grid
+  var contentFilterBrand = "", contentFilterPlatform = "", contentFilterStatus = ""; // "" = All, for the Content Pipeline filter bar
+  var paymentFilterStatus = ""; // "" = All, for the Money page's Payment Tracker filter pills
+  var CAT_ORDER = ["Film","Edit","Submit","Post","FollowUp"];
+  var CAT_ICON = {Film:"FILM", Edit:"EDIT", Submit:"SUB", Post:"POST", FollowUp:"F/U"};
+  var CAT_LABEL_FULL = {Film:"FILM", Edit:"EDIT", Submit:"SUBMIT", Post:"POST", FollowUp:"FOLLOW UP"};
+
+  function todayStr(d){
+    d = d || new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function addDays(dateStr, n){
+    var d = new Date(dateStr+"T00:00:00");
+    d.setDate(d.getDate()+n);
+    return todayStr(d);
+  }
+  function fmtDate(s){
+    if(!s) return "—";
+    var d = new Date(s+"T00:00:00");
+    if(isNaN(d)) return s;
+    return d.toLocaleDateString(undefined,{month:"short", day:"numeric"});
+  }
+  function fmtMoney(n){
+    n = Number(n)||0;
+    return "$"+n.toLocaleString(undefined,{maximumFractionDigits:2});
+  }
+  function daysUntil(s){
+    if(!s) return null;
+    var d = new Date(s+"T00:00:00"), t = new Date(todayStr()+"T00:00:00");
+    return Math.round((d-t)/86400000);
+  }
+  function escapeHtml(s){
+    return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function monthlyEquivalent(deal){
+    var amt = Number(deal.guaranteedPay)||0;
+    var f = deal.payFrequency || "Monthly";
+    if(f==="Monthly") return amt;
+    if(f==="Weekly") return amt*4.345;
+    return 0; // Per Video / One-Time / None aren't a recurring guaranteed monthly amount
+  }
+  // Real-period guaranteed revenue for the current calendar month — no averaging,
+  // no prorating, no fractional "monthly equivalent" amounts. Returns the actual
+  // dollar amounts a deal's own payment periods put in this calendar month, split
+  // into what's already earned (period has fully elapsed) vs upcoming (period
+  // hasn't completed yet). Money page only — Today page keeps monthlyEquivalent().
+  function guaranteedThisMonth(deal){
+    var amt = Number(deal.guaranteedPay)||0;
+    var f = deal.payFrequency || "Monthly";
+    var today = todayStr();
+    var now = new Date(today+"T00:00:00");
+    var monthStart = todayStr(new Date(now.getFullYear(), now.getMonth(), 1));
+    var monthEnd = todayStr(new Date(now.getFullYear(), now.getMonth()+1, 0));
+    var earned = 0, upcoming = 0;
+    if(!amt) return {earned:0, upcoming:0};
+
+    if(f==="Monthly"){
+      if(!deal.startDate || deal.startDate<=today) earned = amt;
+      else if(deal.startDate<=monthEnd) upcoming = amt;
+    } else if(f==="Weekly"){
+      if(!deal.startDate) return {earned:0, upcoming:0};
+      var idx = 0;
+      while(idx<520){ // safety guard, ~10 years of weekly periods
+        var pStart = addDays(deal.startDate, idx*7);
+        if(pStart>monthEnd) break;
+        var pEnd = addDays(pStart, 6);
+        if(pEnd>=monthStart){
+          if(pEnd<=today) earned += amt;
+          else upcoming += amt;
+        }
+        idx++;
+      }
+    } else if(f==="One-Time"){
+      if(deal.startDate && deal.startDate>=monthStart && deal.startDate<=monthEnd){
+        if(deal.startDate<=today) earned = amt;
+        else upcoming = amt;
+      }
+    }
+    // Per Video / None: not a guaranteed monthly amount — both stay 0.
+    return {earned:earned, upcoming:upcoming};
+  }
+  // Payment "Type" taxonomy was renamed (Guaranteed→Base, CPM/Performance→CPM)
+  // for the Money page rebuild. This maps any OLD stored value to its new
+  // label for display/classification without ever touching the stored
+  // document — existing payment records are never mutated just to relabel.
+  function normalizePaymentType(t){
+    if(t==="Guaranteed") return "Base";
+    if(t==="CPM/Performance") return "CPM";
+    return t || "Other";
+  }
+  function isBasePaymentType(t){ return normalizePaymentType(t)==="Base"; }
+  function isThisMonth(dateStr){
+    if(!dateStr) return false;
+    var d = new Date(dateStr+"T00:00:00");
+    if(isNaN(d)) return false;
+    var today = new Date(todayStr()+"T00:00:00");
+    return d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth();
+  }
+  function dealForBrand(brand){
+    return state.deals.find(function(d){ return d.brand===brand; });
+  }
+  function matchesSearch(obj, fields){
+    if(!searchQuery) return true;
+    var q = searchQuery.toLowerCase();
+    return fields.some(function(f){ return String(obj[f]||"").toLowerCase().indexOf(q)>-1; });
+  }
+
+  // ===================================================================
+  // Deal scheduling — turns each deal's REAL recurring requirement
+  // (requiredVideosCount, its cycle type, and its real start date) into
+  // the current Required/Completed/Remaining window. Nothing here
+  // invents a concept, title, or deadline — it only does date math on
+  // fields the user (or a real contract) already provided, and only
+  // counts a video as "completed" toward a period if the user's own
+  // data (postedDate or dueDate) actually falls in that window.
+  // ===================================================================
+  function clampMonthDate(y, m, day){
+    var last = new Date(y, m+1, 0).getDate();
+    return new Date(y, m, Math.min(day, last));
+  }
+  function dealCycle(d){
+    var type = d.cycleType || "None";
+    var required = Number(d.requiredVideosCount)||0;
+    if(type==="None" || !d.startDate || !required) return null;
+    var today = todayStr();
+    if(type==="Weekly"){
+      var diffDays = Math.floor((new Date(today+"T00:00:00") - new Date(d.startDate+"T00:00:00"))/86400000);
+      var idx = diffDays<0 ? 0 : Math.floor(diffDays/7);
+      var pStart = addDays(d.startDate, idx*7);
+      var pEnd = addDays(pStart, 6);
+      return {type:type, start:pStart, end:pEnd, required:required, label:"Week of "+fmtDate(pStart)};
+    }
+    if(type==="Monthly"){
+      var sD = new Date(d.startDate+"T00:00:00");
+      var anchorDay = sD.getDate();
+      var tD = new Date(today+"T00:00:00");
+      var candidate = clampMonthDate(tD.getFullYear(), tD.getMonth(), anchorDay);
+      if(candidate > tD){
+        var pm = tD.getMonth()-1, py = tD.getFullYear();
+        if(pm<0){ pm=11; py--; }
+        candidate = clampMonthDate(py, pm, anchorDay);
+      }
+      if(candidate < sD) candidate = sD;
+      var nm = candidate.getMonth()+1, ny = candidate.getFullYear();
+      if(nm>11){ nm=0; ny++; }
+      var nextStart = clampMonthDate(ny, nm, anchorDay);
+      var pEndD = new Date(nextStart.getTime()-86400000);
+      var pStartS = todayStr(candidate), pEndS = todayStr(pEndD);
+      return {type:type, start:pStartS, end:pEndS, required:required, label:"This month ("+fmtDate(pStartS)+"–"+fmtDate(pEndS)+")"};
+    }
+    if(type==="Fixed Window"){
+      if(!d.deadline) return null;
+      return {type:type, start:d.startDate, end:d.deadline, required:required, label:"Current window ("+fmtDate(d.startDate)+"–"+fmtDate(d.deadline)+")"};
+    }
+    return null;
+  }
+  function dealCycleStats(d){
+    var cyc = dealCycle(d);
+    if(!cyc) return null;
+    var completed = state.content.filter(function(c){
+      if(c.brand!==d.brand) return false;
+      if(c.status!=="POSTED") return false;
+      var dt = c.postedDate || c.dueDate;
+      if(!dt) return false;
+      return dt>=cyc.start && dt<=cyc.end;
+    }).length;
+    var remaining = Math.max(0, cyc.required - completed);
+    return {
+      type: cyc.type, required: cyc.required, completed: completed, remaining: remaining,
+      label: cyc.label, start: cyc.start, end: cyc.end
+    };
+  }
+  // Current calendar week (Sun–Sat) containing today, for deciding whether a
+  // fixed-window deadline genuinely falls "this week" — not just within a
+  // rolling 7 days of whatever date the deal happens to be anchored on.
+  function currentWeekBounds(){
+    var t = new Date(todayStr()+"T00:00:00");
+    var dow = t.getDay();
+    var start = new Date(t.getTime() - dow*86400000);
+    var end = new Date(start.getTime() + 6*86400000);
+    return {start: todayStr(start), end: todayStr(end)};
+  }
+  function inCurrentCalendarWeek(dateStr){
+    if(!dateStr) return false;
+    var wk = currentWeekBounds();
+    return dateStr>=wk.start && dateStr<=wk.end;
+  }
+  function currentMonthBounds(){
+    var t = new Date(todayStr()+"T00:00:00");
+    var start = new Date(t.getFullYear(), t.getMonth(), 1);
+    var end = new Date(t.getFullYear(), t.getMonth()+1, 0);
+    return {start: todayStr(start), end: todayStr(end)};
+  }
+
+  // ===================================================================
+  // Account posting progress — reads the REAL per-account posting
+  // requirement the user already typed into that account's own
+  // "Posting Requirement" field (e.g. "10 posts/month", "5 posts/week",
+  // "2 posts/day"). Nothing here invents a pace or a target: if that
+  // field is empty or isn't in a recognizable "<N> posts/<period>"
+  // shape, we simply don't have a requirement to track against.
+  // ===================================================================
+  function parsePostingRequirement(text){
+    if(!text) return null;
+    // "+" after the number (e.g. "2+ videos/day", a real minimum-pace
+    // phrasing) is allowed but not semantically special — we just read the
+    // stated minimum count, same as without the "+".
+    var m = String(text).match(/(\d+)\+?\s*(?:posts?|videos?|vids?)?\s*(?:\/|per)\s*(day|week|month)/i);
+    if(!m) return null;
+    var count = Number(m[1]);
+    if(!count) return null;
+    return {count: count, unit: m[2].toLowerCase()};
+  }
+  function postingPeriodBounds(unit){
+    var today = todayStr();
+    if(unit==="day") return {start:today, end:today, label:"today"};
+    if(unit==="week"){ var wk = currentWeekBounds(); return {start:wk.start, end:wk.end, label:"this week"}; }
+    var mo = currentMonthBounds(); return {start:mo.start, end:mo.end, label:"this month"};
+  }
+  // Other accounts that share this exact brand + platform pairing — used to
+  // decide when a legacy (untagged) posted video can safely be attributed
+  // to a single account without guessing among multiple candidates.
+  function accountsSharingPlatform(brand, platform){
+    return state.accounts.filter(function(a){
+      return a.brand===brand && (a.platform||"").trim().toLowerCase()===(platform||"").trim().toLowerCase();
+    });
+  }
+  // Whether a logged video/post belongs to a specific account. A video
+  // tagged with an explicit account (content.account = that account's id)
+  // always counts only for that one account — including when the same
+  // piece of content was posted separately to two platforms, since each
+  // platform gets its own content record and its own account tag. A video
+  // logged before this feature existed (no account tag) is still counted,
+  // but ONLY when this account is the sole account for that brand+platform
+  // — a provable match, never a guess between multiple real candidates.
+  function contentBelongsToAccount(c, account){
+    if(c.account) return c.account===account.__id;
+    if((c.brand||"")!==(account.brand||"")) return false;
+    if((c.platform||"").trim().toLowerCase() !== (account.platform||"").trim().toLowerCase()) return false;
+    return accountsSharingPlatform(account.brand, account.platform).length===1;
+  }
+  function accountLabel(a){
+    return (a.username||"Account")+" ("+(a.platform||"—")+")";
+  }
+  // Builds <option> markup for the accounts matching a video's current
+  // Brand and Platform fields — the dropdown the user picks a posting
+  // account from. Never lists an account for a different brand/platform.
+  function accountOptionsForVideo(brand, platform){
+    if(!brand) return [];
+    return state.accounts.filter(function(a){
+      if((a.brand||"")!==brand) return false;
+      if(platform && (a.platform||"").trim().toLowerCase()!==platform.trim().toLowerCase()) return false;
+      return true;
+    });
+  }
+  function accountOptionsHtml(brand, platform, selectedId){
+    var opts = accountOptionsForVideo(brand, platform);
+    var stillValid = opts.some(function(a){ return a.__id===selectedId; });
+    var html = '<option value="">No specific account</option>'+opts.map(function(a){
+      return '<option value="'+escapeHtml(a.__id)+'" '+(a.__id===selectedId?"selected":"")+'>'+escapeHtml(accountLabel(a))+'</option>';
+    }).join("");
+    return {html:html, stillValid:stillValid};
+  }
+  // Full posting-progress picture for one account: a real requirement
+  // parsed from its own text field (or null if there isn't one), the
+  // real current period that requirement implies, how many of this
+  // account's own posted videos fall in that period, and the most
+  // recent post date across ALL of this account's posted videos.
+  function accountStats(account){
+    var req = parsePostingRequirement(account.postingRequirements);
+    var postedAll = state.content.filter(function(c){ return c.status==="POSTED" && contentBelongsToAccount(c, account); });
+    var lastPostDate = null;
+    postedAll.forEach(function(c){
+      var dt = c.postedDate || c.dueDate;
+      if(dt && (!lastPostDate || dt>lastPostDate)) lastPostDate = dt;
+    });
+    var out = {
+      lastPostDate: lastPostDate, postedAllTime: postedAll.length,
+      required: null, periodPosted: null, remaining: null, periodLabel: null, status: null
+    };
+    if(!req) return out;
+    var bounds = postingPeriodBounds(req.unit);
+    var periodPosted = postedAll.filter(function(c){
+      var dt = c.postedDate || c.dueDate;
+      return dt && dt>=bounds.start && dt<=bounds.end;
+    }).length;
+    out.required = req.count;
+    out.periodPosted = periodPosted;
+    out.remaining = Math.max(0, req.count - periodPosted);
+    out.periodLabel = bounds.label;
+    if(periodPosted >= req.count){
+      out.status = "Complete";
+    } else {
+      var start = new Date(bounds.start+"T00:00:00"), end = new Date(bounds.end+"T00:00:00"), today = new Date(todayStr()+"T00:00:00");
+      var totalDays = Math.round((end-start)/86400000)+1;
+      var elapsedDays = Math.min(totalDays, Math.max(1, Math.round((today-start)/86400000)+1));
+      var expected = req.count * (elapsedDays/totalDays);
+      out.status = periodPosted >= expected ? "On Track" : "Behind";
+    }
+    return out;
+  }
+
+  function toast(msg, isErr){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.color = isErr ? "var(--critical)" : "";
+    t.classList.add("show");
+    clearTimeout(toast._h);
+    toast._h = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+  function showBanner(msg){
+    var b = document.getElementById("banner");
+    b.textContent = msg;
+    b.classList.add("show");
+  }
+  function quLog(msg, ok){
+    var el = document.getElementById("qu-log");
+    var line = document.createElement("div");
+    line.className = "qu-line";
+    line.innerHTML = '<span class="'+(ok?"ok":"bad")+'">'+(ok?"✓":"⚠")+'</span><span>'+escapeHtml(msg)+'</span>';
+    el.insertBefore(line, el.firstChild);
+    while(el.children.length>4) el.removeChild(el.lastChild);
+  }
+
+  // ===================================================================
+  // DB wiring — Supabase adapter
+  // ===================================================================
+  var SUPABASE_URL = "https://ydabznqiytdrmxlcfqok.supabase.co";
+  var SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PBcTDMENSH3ryZLzLgzICg_-omqCm9v";
+  var supabaseClient = null;
+  var currentUser = null;
+  var collectionListeners = {};
+  var docListeners = {};
+
+  function makeDocSnap(row){
+    return {
+      id: row ? row.id : null,
+      exists: !!row,
+      data: function(){ return row ? Object.assign({}, row.data || {}) : undefined; }
+    };
+  }
+
+  async function refreshCollection(name){
+    var res = await supabaseClient.from(name).select("id,data").eq("owner_id", currentUser.id);
+    if(res.error) throw res.error;
+    var docs = (res.data || []).map(function(row){ return makeDocSnap(row); });
+    (collectionListeners[name] || []).forEach(function(x){ try{x.ok({docs:docs});}catch(e){} });
+  }
+
+  async function refreshDoc(path){
+    var parts = path.split("/");
+    var table = parts[0], id = parts[1];
+    var res = await supabaseClient.from(table).select("id,data").eq("id", id).eq("owner_id", currentUser.id).maybeSingle();
+    if(res.error) throw res.error;
+    (docListeners[path] || []).forEach(function(x){ try{x.ok(makeDocSnap(res.data));}catch(e){} });
+  }
+
+  function makeDbAdapter(){
+    return {
+      collection: function(name){
+        return {
+          onSnapshot: function(ok, err){
+            collectionListeners[name] = collectionListeners[name] || [];
+            collectionListeners[name].push({ok:ok, err:err});
+            refreshCollection(name).catch(function(e){ if(err) err(e); });
+          },
+          add: async function(data){
+            var res = await supabaseClient.from(name).insert({owner_id:currentUser.id, data:data}).select("id").single();
+            if(res.error) throw res.error;
+            await refreshCollection(name);
+            return {id:res.data.id};
+          },
+          doc: function(id){ return makeCollectionDoc(name,id); }
+        };
+      },
+      doc: function(path){
+        var parts = path.split("/");
+        return makeCollectionDoc(parts[0], parts[1], path);
+      }
+    };
+  }
+
+  function makeCollectionDoc(name, id, fullPath){
+    var path = fullPath || (name+"/"+id);
+    return {
+      get: async function(){
+        var res = await supabaseClient.from(name).select("id,data").eq("id",id).eq("owner_id",currentUser.id).maybeSingle();
+        if(res.error) throw res.error;
+        return makeDocSnap(res.data);
+      },
+      set: async function(data){
+        var res = await supabaseClient.from(name).upsert({id:id, owner_id:currentUser.id, data:data},{onConflict:"id"});
+        if(res.error) throw res.error;
+        if(name==="settings") await refreshDoc(path); else await refreshCollection(name);
+      },
+      update: async function(patch){
+        var old = await this.get();
+        if(!old.exists) throw new Error("Record not found");
+        var merged = Object.assign({}, old.data() || {}, patch);
+        var res = await supabaseClient.from(name).update({data:merged}).eq("id",id).eq("owner_id",currentUser.id);
+        if(res.error) throw res.error;
+        if(name==="settings") await refreshDoc(path); else await refreshCollection(name);
+      },
+      delete: async function(){
+        var res = await supabaseClient.from(name).delete().eq("id",id).eq("owner_id",currentUser.id);
+        if(res.error) throw res.error;
+        await refreshCollection(name);
+      },
+      onSnapshot: function(ok, err){
+        docListeners[path] = docListeners[path] || [];
+        docListeners[path].push({ok:ok, err:err});
+        refreshDoc(path).catch(function(e){ if(err) err(e); });
+      }
+    };
+  }
+
+  async function initDb(){
+    try{
+      if(!window.supabase || !window.supabase.createClient) throw new Error("Supabase library did not load");
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+      var sessionRes = await supabaseClient.auth.getSession();
+      var session = sessionRes.data && sessionRes.data.session;
+      if(!session){
+        var email = window.prompt("UGC Command Center login — email:");
+        if(!email) throw new Error("Login cancelled");
+        var password = window.prompt("Password:");
+        if(!password) throw new Error("Login cancelled");
+        var login = await supabaseClient.auth.signInWithPassword({email:email.trim(), password:password});
+        if(login.error) throw login.error;
+        session = login.data.session;
+      }
+      currentUser = session.user;
+      db = makeDbAdapter();
+      state.dbAvailable = true;
+      await maybeSeed();
+      subscribeCollection("deals");
+      subscribeCollection("content");
+      subscribeCollection("payments");
+      subscribeCollection("accounts");
+      subscribeCollection("tasks");
+      db.doc("settings/summary").onSnapshot(function(snap){
+        state.settings = snap.exists ? (snap.data()||{}) : {};
+        render();
+      }, function(){});
+      // Claude's natural-language helper is intentionally disabled outside Claude.
+      // Quick Update still falls back to the app's built-in regex parser.
+      sampleFn = null;
+    }catch(e){
+      db = null;
+      state.dbAvailable = false;
+      showBanner("Supabase connection failed: "+(e && e.message ? e.message : "unknown error"));
+      render();
+    }
+  }
+
+  function subscribeCollection(name){
+    try{
+      db.collection(name).onSnapshot(function(qs){
+        var arr = [];
+        qs.docs.forEach(function(d){
+          var data = Object.assign({}, d.data() || {});
+          data.__id = d.id;
+          arr.push(data);
+        });
+        state[name] = arr;
+        state.ready = true;
+        render();
+      }, function(err){
+        showBanner("Couldn't load \""+name+"\" — "+(err && err.message ? err.message : "connection issue")+".");
+      });
+    }catch(e){}
+  }
+
+  // Merge-safe write to the single settings/summary doc.
+  async function patchSettings(patch){
+    var cur = {};
+    try{
+      var snap = await db.doc("settings/summary").get();
+      cur = snap.exists ? (snap.data()||{}) : {};
+    }catch(e){}
+    var merged = Object.assign({}, cur, patch);
+    await db.doc("settings/summary").set(merged);
+    return merged;
+  }
+
+  async function maybeSeed(){
+    if(seedChecked) return;
+    seedChecked = true;
+    try{
+      var summarySnap = await db.doc("settings/summary").get();
+      var summary = summarySnap.exists ? summarySnap.data() : {};
+      if(summary && summary.seeded) return;
+      var today = todayStr();
+      var trialDue = addDays(today, 7);
+
+      var deals = [
+        {
+          brand:"ReBet", campaign:"ReBet: Social Sports & Casino Creator Campaign",
+          status:"Active", account:"@thatskiandresmith", platforms:"TikTok, Instagram",
+          startDate:"2026-09-14", endDate:"", deadline:"",
+          nextAction:"Keep pace: ~20 posts/month across both platforms; track views for the 30-day CPM window.",
+          guaranteedPay:250, payFrequency:"Monthly", cpmPay:"$1.00 CPM (aggregate) + per-video milestone bonuses: 50k=$150, 100k=$350, 250k=$500, 500k=$1,000 (non-stacking)",
+          requiredVideos:"10 TikTok + 10 Instagram / month (20 total)", requiredVideosCount:20, postingFrequency:"~20 deliverables/month",
+          contractInfo:"Independent Contractor / Campaign Participation Agreement via SideShift. Signed 9/15/26. Campaign term starts 9/14/26, no fixed end date.",
+          deliverablesDetail:"10 Instagram + 10 TikTok posts per calendar-month cycle. Extra posts on one platform don't count toward the other platform's target.",
+          contentRequirements:"Game previews, breakdowns, hot takes, daily picks/predictions, reactions to NBA/NFL/MLB/NHL. Show real pick slips in-app rather than reading a script. Pin your link/code, mention free bonus coins on sign-up. Required hashtags: #ad, #partner.",
+          postingSchedule:"Monthly cycle, ~20 posts/month, no fixed daily schedule specified.",
+          paymentStructure:"Fixed base $250/mo (pro-rated to delivery ÷20), paid end of each calendar month, plus $1.00 CPM on aggregate views (30-day window) and per-video milestone bonuses.",
+          contractRules:"No competitor mentions (PrizePicks, Underdog, DraftKings, FanDuel). No guaranteed-win or easy-money language. No real-money gambling framing. No targeting under-18. Keep videos live 90 days. Report handle changes within 48 hrs. No bulk/automated posting.",
+          notes:"", links:""
+        },
+        {
+          brand:"yope", campaign:"Canvas UGC Creator - YOPE APP (Photo Sharing App)",
+          status:"Active", account:"@kiandreonline", platforms:"TikTok, Instagram",
+          startDate:"2026-09-07", endDate:"", deadline:trialDue,
+          nextAction:"Trial in progress: 10 videos in 7 days, due "+trialDue+".",
+          guaranteedPay:0, payFrequency:"Per Video", cpmPay:"$7.50/approved video ($15/video posted both platforms); per-video milestones 15k views=$15 up to 2M=$750 (non-stacking); +$100/mo consistency bonus (zero missed days, min 2/day); +$25 per finished referral",
+          requiredVideos:"Trial: 10 videos in 7 days. Long-term: 60–115 videos/month, min 2/day.", requiredVideosCount:10, postingFrequency:"2+ videos/day, every day",
+          contractInfo:"Independent Contractor / Campaign Participation Agreement via SideShift. Campaign term starts 9/7/26. Currently in the paid trial (started "+today+", due "+trialDue+").",
+          deliverablesDetail:"Trial: 10 videos in 7 days ($100 flat). Long-term: 60–115 videos/month, min 2/day, no missed days. yope sends 60–80 scripted concepts weekly to film first; own iterations pay the same rate up to 115/month.",
+          contentRequirements:"New, dedicated TikTok + Instagram accounts — personal-looking, no 'yope' in the handle. #yopeapp hashtag required only in videos that reference/feature/demonstrate the app, placed in the 3rd–4th word of the caption.",
+          postingSchedule:"Daily — 2+ videos every day, no missed days, across both platforms.",
+          paymentStructure:"$7.50/approved deliverable ($15/video since it posts both platforms). Paid every 30 days; trial paid within 3 days of finishing. Per-video milestone bonuses (non-stacking) plus consistency and referral bonuses.",
+          contractRules:"Must be new, non-'yope'-branded handles. No bulk/automated posting. Keep videos live 90 days. Report handle changes within 48 hrs.",
+          notes:"Confirm the contract is fully signed — the creator signature line was blank on the copy read at setup.", links:""
+        },
+        {
+          brand:"XXYY", campaign:"XXYY & Giga X UGC Content promote 3",
+          status:"Active", account:"@kitradescrypto", platforms:"TikTok, Instagram",
+          startDate:"2026-09-14", endDate:"", deadline:"",
+          nextAction:"Keep weekly pace: 5 TikTok + 5 Instagram; each video needs 300+ views within 7 days to count.",
+          guaranteedPay:75, payFrequency:"Weekly", cpmPay:"Per-video milestones: 1k views=$10, 10k=$50, 100k=$200 (non-stacking, 300-view minimum, 7-day window) + 25% referral commission when someone signs up with your code",
+          requiredVideos:"5 TikTok + 5 Instagram / week (10 total)", requiredVideosCount:10, postingFrequency:"5+5 per week",
+          contractInfo:"Independent Contractor / Campaign Participation Agreement via SideShift. Signed by both parties 9/16/26. Campaign term starts 9/14/26.",
+          deliverablesDetail:"5 Instagram + 5 TikTok per weekly cycle. A cycle completes once both platform targets are met; the first cycle starts on your first eligible post.",
+          contentRequirements:"No brand-specific tone/do's-and-don'ts spelled out beyond standard compliance and brand-safety clauses.",
+          postingSchedule:"Weekly — 5 + 5 per week.",
+          paymentStructure:"$75/week base, paid once both platform targets are met (pro-rated to delivery ÷10). Per-video milestone bonuses. Videos need 300+ views within 7 days to be payout-eligible. Plus 25% referral commission on code sign-ups (exact payout mechanics beyond the rate weren't detailed in the contract).",
+          contractRules:"300-view minimum per video within 7 days — tightest window of the three deals. No bulk/automated posting. Keep videos live 90 days. Report handle changes within 48 hrs.",
+          notes:"Ask the brand to clarify exactly how the 25% referral commission is calculated and paid.", links:""
+        }
+      ];
+
+      var accounts = [
+        {platform:"TikTok", username:"@thatskiandresmith", brand:"ReBet", accountStatus:"Active", warmupStatus:"Complete", postingRequirements:"10 posts/month", lastPost:""},
+        {platform:"Instagram", username:"@thatskiandresmith", brand:"ReBet", accountStatus:"Active", warmupStatus:"Complete", postingRequirements:"10 posts/month", lastPost:""},
+        {platform:"TikTok", username:"@kiandreonline", brand:"yope", accountStatus:"Active", warmupStatus:"In Progress", postingRequirements:"2+ videos/day", lastPost:""},
+        {platform:"Instagram", username:"@kiandreonline", brand:"yope", accountStatus:"Active", warmupStatus:"In Progress", postingRequirements:"2+ videos/day", lastPost:""},
+        {platform:"TikTok", username:"@kitradescrypto", brand:"XXYY", accountStatus:"Active", warmupStatus:"Complete", postingRequirements:"5 posts/week", lastPost:""},
+        {platform:"Instagram", username:"@kitradescrypto", brand:"XXYY", accountStatus:"Active", warmupStatus:"Complete", postingRequirements:"5 posts/week", lastPost:""}
+      ];
+
+      // Only the user's real, contract-derived deals and accounts are ever
+      // seeded here. This app must never auto-insert example/sample/demo
+      // content, tasks, or payments — the user explicitly asked for that,
+      // and any future record must come from something they actually did
+      // or entered (or explicitly asked Claude to add).
+      var batchOps = [];
+      deals.forEach(function(d){ batchOps.push({collection:"deals", data:d}); });
+      accounts.forEach(function(a){ batchOps.push({collection:"accounts", data:a}); });
+
+      for(var i=0;i<batchOps.length;i++){
+        await db.collection(batchOps[i].collection).add(batchOps[i].data);
+      }
+      await patchSettings({seeded:true, seededAt:new Date().toISOString()});
+    }catch(e){ console.log("seed error", e); }
+  }
+
+  // ===================================================================
+  // Nav / search
+  // ===================================================================
+  document.querySelectorAll(".navitem").forEach(function(el){
+    el.addEventListener("click", function(){ activeTab = el.getAttribute("data-tab"); searchQuery=""; dealDetailId=null; accountDetailId=null; document.getElementById("search-input").value=""; render(); });
+  });
+
+  // Deal-card clicks are delegated on `document` itself — not on #view-root
+  // or any other element that gets recreated/replaced — so there is zero
+  // dependency on container timing or lifecycle. Bound once, here, at load.
+  document.addEventListener("click", function(ev){
+    var card = ev.target.closest ? ev.target.closest(".dealcard[data-deal-id]") : null;
+    if(!card) return;
+    try{
+      openDealDetail(card.getAttribute("data-deal-id"));
+    }catch(e){
+      console.error("Failed to open deal detail:", e);
+      toast("Couldn't open that deal — try again", true);
+    }
+  });
+
+  window.onSearchInput = function(){
+    searchQuery = document.getElementById("search-input").value.trim();
+    render();
+  };
+
+  window.toggleAddMenu = function(ev){
+    if(ev) ev.stopPropagation();
+    document.getElementById("add-menu").classList.toggle("open");
+    document.getElementById("add-menu-btn").classList.toggle("open");
+  };
+  window.chooseAdd = function(kind){
+    document.getElementById("add-menu").classList.remove("open");
+    document.getElementById("add-menu-btn").classList.remove("open");
+    openNew(kind); // same form/functionality each old button used
+  };
+  document.addEventListener("click", function(e){
+    var wrap = document.getElementById("add-menu-wrap");
+    if(wrap && !wrap.contains(e.target)){
+      document.getElementById("add-menu").classList.remove("open");
+      document.getElementById("add-menu-btn").classList.remove("open");
+    }
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key==="Escape"){
+      document.getElementById("add-menu").classList.remove("open");
+      document.getElementById("add-menu-btn").classList.remove("open");
+    }
+  });
+
+  function updateCounts(){
+    document.getElementById("cnt-deals").textContent = state.deals.filter(function(d){return d.status!=="Completed" && d.status!=="Cancelled";}).length;
+    document.getElementById("cnt-content").textContent = state.content.filter(function(c){return c.status!=="POSTED";}).length;
+    document.getElementById("cnt-payments").textContent = state.payments.filter(function(p){return p.status!=="Paid";}).length;
+    document.getElementById("cnt-accounts").textContent = state.accounts.length;
+    document.getElementById("cnt-today").textContent = state.tasks.filter(function(t){return !t.done;}).length;
+    document.querySelectorAll(".navitem").forEach(function(el){ el.classList.toggle("active", el.getAttribute("data-tab")===activeTab); });
+  }
+
+  function stat(k,v,tone,sub,extraHtml){
+    return '<div class="stat" style="--stat-c:var(--'+(tone||"accent")+')"><div class="k">'+escapeHtml(k)+'</div><div class="v '+(tone||"")+'">'+v+'</div>'+(sub?'<div class="sub">'+escapeHtml(sub)+'</div>':'')+(extraHtml||'')+'</div>';
+  }
+  function greetingText(){
+    var h = new Date().getHours();
+    var period = h<12 ? "morning" : (h<18 ? "afternoon" : "evening");
+    return "Good "+period+", Kiandre";
+  }
+  function todayHeaderDate(){
+    return new Date().toLocaleDateString(undefined, {weekday:"long", month:"long", day:"numeric"});
+  }
+  function plural(n, word){ return n+" "+word+(n===1?"":"s"); }
+  function workloadSummary(overdueCount, attentionTotal){
+    if(attentionTotal===0) return "Nothing due today. You're all caught up.";
+    if(overdueCount>0){
+      if(overdueCount===attentionTotal){
+        return plural(overdueCount,"video")+" "+(overdueCount===1?"is":"are")+" overdue.";
+      }
+      return plural(overdueCount,"video")+" "+(overdueCount===1?"is":"are")+" overdue and "+attentionTotal+" need"+(attentionTotal===1?"s":"")+" your attention today.";
+    }
+    return plural(attentionTotal,"thing")+" need"+(attentionTotal===1?"s":"")+" your attention today. You're on track this week.";
+  }
+  function panelOpen(title, n){
+    return '<div class="panel"><div class="panel-head"><h2>'+escapeHtml(title)+(n!=null?' <span class="n">'+n+'</span>':'')+'</h2></div><div class="panel-body">';
+  }
+  function panelClose(){ return '</div></div>'; }
+  function emptyState(big, small){
+    return '<div class="panel"><div class="empty"><div class="big">'+escapeHtml(big)+'</div><div>'+escapeHtml(small)+'</div></div></div>';
+  }
+  function statusBadge(s, isSample){
+    if(!s) return '<span class="badge">—</span>';
+    return '<span class="badge st-'+STATUS_SLUG(s)+'">'+escapeHtml(s)+'</span>'+(isSample?' <span class="badge example">Example</span>':'');
+  }
+  function platformChips(s){
+    if(!s) return "—";
+    return String(s).split(",").map(function(p){ p=p.trim(); return p?'<span class="chip">'+escapeHtml(p)+'</span>':''; }).join(" ");
+  }
+
+  // ===================================================================
+  // Today view
+  // ===================================================================
+  function renderToday(){
+    var today = todayStr();
+    var alerts = [];
+    state.content.forEach(function(c){
+      if(!c.dueDate || c.status==="POSTED") return;
+      var du = daysUntil(c.dueDate);
+      if(du<0) alerts.push({sev:"critical", title:(c.brand||"—")+" — "+(c.name||"Untitled"), meta:"Due "+fmtDate(c.dueDate)+" · "+c.status, right:Math.abs(du)+"d overdue", kind:"content", id:c.__id, sample:c.isSample});
+      else if(du===0) alerts.push({sev:"warn", title:(c.brand||"—")+" — "+(c.name||"Untitled"), meta:"Due today · "+c.status, right:"Due today", kind:"content", id:c.__id, sample:c.isSample});
+    });
+
+    var activeDeals = state.deals.filter(function(d){return d.status==="Active";}).length;
+
+    // Completed/Required and Due This Week now come from each active deal's
+    // real recurring requirement (Target Count + Workload Cycle + real
+    // Start Date), not from a flat lifetime tally. A deal with no cycle set
+    // up simply doesn't contribute — nothing is invented on its behalf.
+    var completedReal = 0, requiredTotal = 0, dueThisWeek = 0;
+    state.deals.filter(function(d){return d.status==="Active";}).forEach(function(d){
+      var cyc = dealCycleStats(d);
+      if(!cyc) return;
+      completedReal += cyc.completed;
+      requiredTotal += cyc.required;
+      // "Due This Week" only counts a deliverable that is genuinely owed
+      // within the current calendar week — not every remaining unit of a
+      // longer cycle.
+      if(cyc.type==="Weekly"){
+        // A weekly cycle's current period IS this week's requirement, by
+        // definition of the contract's own cadence.
+        dueThisWeek += cyc.remaining;
+      } else if(cyc.type==="Fixed Window"){
+        // Only counts if the real deadline actually lands in this calendar
+        // week — a trial due in a week and a half isn't due "this week".
+        if(inCurrentCalendarWeek(cyc.end)) dueThisWeek += cyc.remaining;
+      }
+      // Monthly: never rolled into "this week" — the contract only states a
+      // monthly total, no explicit weekly pace, so nothing is assumed here.
+    });
+    var guaranteedMo = state.deals.filter(function(d){return d.status==="Active";}).reduce(function(s,d){return s+monthlyEquivalent(d);},0);
+
+    // Real (non-example) overdue / needs-attention counts, for the one-line
+    // workload summary and the stat cards' secondary metrics.
+    var overdueIds = {}, attentionIds = {};
+    state.content.forEach(function(c){
+      if(c.isSample) return;
+      if(c.dueDate && c.status!=="POSTED"){
+        var du = daysUntil(c.dueDate);
+        if(du<0){ overdueIds[c.__id]=1; attentionIds[c.__id]=1; }
+        else if(du===0){ attentionIds[c.__id]=1; }
+      }
+      if(c.status==="APPROVAL" || c.approvalStatus==="Pending"){ attentionIds[c.__id]=1; }
+    });
+    var overdueCountReal = Object.keys(overdueIds).length;
+    var attentionTotalReal = Object.keys(attentionIds).length;
+
+    var pendingReal = state.payments.filter(function(p){return !p.isSample && p.status==="Pending";}).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+    var revenueSub = pendingReal>0 ? fmtMoney(pendingReal)+" pending" : "No pending payments";
+
+    var pct = requiredTotal>0 ? Math.min(100, Math.round(completedReal/requiredTotal*100)) : 0;
+    var progressHtml = requiredTotal>0 ? ('<div class="stat-progress"><div class="stat-progress-track"><div class="stat-progress-fill" style="width:'+pct+'%"></div></div><div class="stat-progress-pct">'+pct+'%</div></div>') : '';
+
+    var totalDealsAll = state.deals.length;
+    var dealsSub = totalDealsAll===0 ? "No deals yet" : (activeDeals===totalDealsAll ? "All active" : activeDeals+" active · "+(totalDealsAll-activeDeals)+" other"+((totalDealsAll-activeDeals)===1?"":"s"));
+
+    var dueSub = dueThisWeek===0 ? "All caught up" : (overdueCountReal>0 ? (overdueCountReal+" overdue") : "On track");
+
+    var html = '<div id="today-header"><div><div id="greeting">'+greetingText()+'</div><div id="workload-summary">'+escapeHtml(workloadSummary(overdueCountReal, attentionTotalReal))+'</div></div><div id="today-date">'+escapeHtml(todayHeaderDate())+'</div></div>';
+
+    html += '<div class="statrow">'+
+      stat("Guaranteed Revenue This Month", fmtMoney(guaranteedMo), "good", revenueSub) +
+      stat("Videos Completed / Required", completedReal+" / "+requiredTotal, "accent", null, progressHtml) +
+      stat("Active Deals", activeDeals, "info", dealsSub) +
+      stat("Videos Due This Week", dueThisWeek, dueThisWeek>0?"warn":"good", dueSub) +
+    '</div>';
+
+    if(alerts.length){
+      html += panelOpen("Needs Attention", alerts.length);
+      alerts.forEach(function(a){
+        html += '<div class="row-item" onclick="openEdit(\''+a.kind+'\',\''+a.id+'\')">'+
+          '<span class="dot '+a.sev+'"></span><span class="title">'+escapeHtml(a.title)+'</span>'+
+          '<span class="meta">'+escapeHtml(a.meta)+'</span>'+(a.sample?'<span class="badge example">Example</span>':'')+
+          '<span class="right">'+escapeHtml(a.right)+'</span></div>';
+      });
+      html += panelClose();
+    }
+
+    // ---- Today's Focus: one sorted, filterable feed instead of five boxes ----
+    var pipelineMap = {Film:"FILM", Edit:"EDIT", Submit:"SUBMIT", Post:"READY"};
+    var feed = [];
+    state.tasks.forEach(function(t){
+      feed.push({type:"task", id:t.__id, category:t.category, name:t.text, brand:t.brand, dueDate:t.dueDate, done:!!t.done, isSample:t.isSample});
+    });
+    CAT_ORDER.forEach(function(cat){
+      var st = pipelineMap[cat];
+      if(!st) return;
+      state.content.filter(function(c){ return c.status===st; }).forEach(function(c){
+        feed.push({type:"video", id:c.__id, category:cat, name:c.name||"Untitled", brand:c.brand, dueDate:c.dueDate, done:false, isSample:c.isSample});
+      });
+    });
+
+    function bucketOf(it){
+      if(it.done) return 5;
+      if(!it.dueDate) return 4;
+      var du = daysUntil(it.dueDate);
+      if(du<0) return 0;
+      if(du===0) return 1;
+      if(du===1) return 2;
+      return 3;
+    }
+    var BUCKET_CLASS = {0:"overdue",1:"today",2:"tomorrow",3:"upcoming",4:"none",5:"done"};
+    var BUCKET_TEXT = {0:"Overdue",1:"Due Today",2:"Due Tomorrow",3:"Upcoming",4:"No Deadline",5:"Done"};
+
+    feed.forEach(function(it){ it.__bucket = bucketOf(it); });
+    feed.sort(function(a,b){
+      if(a.__bucket!==b.__bucket) return a.__bucket-b.__bucket;
+      var ad=a.dueDate||"9999", bd=b.dueDate||"9999";
+      if(ad!==bd) return ad.localeCompare(bd);
+      return CAT_ORDER.indexOf(a.category)-CAT_ORDER.indexOf(b.category);
+    });
+
+    var filtered = focusFilter==="All" ? feed : feed.filter(function(it){ return it.category===focusFilter; });
+
+    var pillsHtml = '<div class="focus-filters">'+["All"].concat(CAT_ORDER).map(function(c){
+      var label = c==="FollowUp" ? "Follow Up" : c;
+      return '<span class="focus-pill '+(focusFilter===c?"active":"")+'" onclick="setFocusFilter(\''+c+'\')">'+label+'</span>';
+    }).join("")+'</div>';
+
+    var feedHtml;
+    if(!filtered.length){
+      feedHtml = '<div class="focus-empty"><div class="big">Nothing here</div><div>'+
+        (focusFilter==="All" ? "You're all caught up." : "No "+(focusFilter==="FollowUp"?"follow-ups":focusFilter.toLowerCase()+" items")+" right now.")+
+      '</div></div>';
+    } else {
+      feedHtml = filtered.map(function(it){
+        var dueText = !it.dueDate ? "No deadline" : (it.__bucket===0 ? "Was due "+fmtDate(it.dueDate) : (it.__bucket===1 ? "Due today" : (it.__bucket===2 ? "Due tomorrow" : "Due "+fmtDate(it.dueDate))));
+        var statusCls = it.done ? "done" : BUCKET_CLASS[it.__bucket];
+        var statusText = it.done ? "Done" : BUCKET_TEXT[it.__bucket];
+        var rowCls = "frow"+((it.__bucket===0&&!it.done)?" overdue":"")+((it.__bucket===1&&!it.done)?" due-today":"")+(it.done?" done":"")+(it.type==="video"?" clickable":"");
+        var openAttr = it.type==="video" ? (' onclick="openEdit(\'content\',\''+it.id+'\')"') : '';
+        var eyebrow = CAT_LABEL_FULL[it.category]+" · "+(it.brand||"—")+(it.isSample?" · Example":"");
+        return '<div class="'+rowCls+'"'+openAttr+'>'+
+          (it.type==="task"
+            ? '<input type="checkbox" '+(it.done?"checked":"")+' onclick="toggleTask(\''+it.id+'\', this.checked)">'
+            : '<span class="frow-chev">›</span>') +
+          '<span class="fcat '+it.category.toLowerCase()+'">'+CAT_ICON[it.category]+'</span>'+
+          '<div class="frow-main">'+
+            '<div class="frow-eyebrow">'+escapeHtml(eyebrow)+'</div>'+
+            '<div class="frow-title">'+escapeHtml(it.name)+'</div>'+
+            '<div class="frow-sub"><span class="frow-due">'+escapeHtml(dueText)+'</span><span class="frow-status '+statusCls+'"><span class="d"></span>'+escapeHtml(statusText)+'</span></div>'+
+          '</div>'+
+          (it.type==="task" ? '<span class="frow-del" onclick="quickDeleteTask(\''+it.id+'\')">✕</span>' : '') +
+        '</div>';
+      }).join("");
+    }
+
+    html += '<div class="focus-panel"><div class="focus-head"><h2>Today\'s Focus <span class="n">'+filtered.length+'</span></h2>'+pillsHtml+'</div><div class="focus-feed">'+feedHtml+'</div></div>';
+
+    setView(html);
+  }
+  window.setFocusFilter = function(cat){
+    focusFilter = cat;
+    render();
+  };
+  window.toggleTask = async function(id, done){
+    if(!db) return;
+    try{ await db.collection("tasks").doc(id).update({done:done}); }catch(e){ toast("Couldn't update task", true); }
+  };
+  window.quickDeleteTask = async function(id){
+    if(!db) return;
+    try{ await db.collection("tasks").doc(id).delete(); }catch(e){ toast("Couldn't delete task", true); }
+  };
+
+  // ===================================================================
+  // Deals view (cards + detail modal)
+  // ===================================================================
+  function renderDeals(){
+    var rows = state.deals.filter(function(d){ return matchesSearch(d, ["brand","campaign"]); }).sort(function(a,b){
+      var order = {Active:0,"Pending Contract":1,Completed:2,Cancelled:3};
+      return (order[a.status]||9)-(order[b.status]||9) || (a.brand||"").localeCompare(b.brand||"");
+    });
+    if(!state.deals.length){ setView(emptyState("No deals yet", "Add your first brand deal with the button above.")); return; }
+    if(!rows.length){ setView(emptyState("No matches", "Nothing matches that search.")); return; }
+
+    var html = '<div class="cardgrid">';
+    rows.forEach(function(d){
+      var cyc = dealCycleStats(d);
+      var pct = cyc && cyc.required>0 ? Math.min(100, Math.round(cyc.completed/cyc.required*100)) : 0;
+      html += '<div class="dealcard" data-deal-id="'+escapeHtml(d.__id)+'">'+
+        '<div class="dealcard-head"><div><div class="dealcard-brand">'+escapeHtml(d.brand||"—")+'</div><div class="dealcard-campaign">'+escapeHtml(d.campaign||"")+'</div></div>'+statusBadge(d.status)+'</div>'+
+        '<div class="dealcard-grid">'+
+          '<div><div class="k">Base Pay</div><div class="v">'+(d.guaranteedPay?fmtMoney(d.guaranteedPay)+(d.payFrequency&&d.payFrequency!=="Monthly"?" / "+d.payFrequency.toLowerCase():"/mo"):"—")+'</div></div>'+
+          '<div><div class="k">Performance</div><div class="v">'+escapeHtml(d.cpmPay?d.cpmPay.split(";")[0].split("+")[0].slice(0,40):"—")+'</div></div>'+
+          '<div><div class="k">Requirement</div><div class="v">'+escapeHtml(d.requiredVideos||"—")+'</div></div>'+
+          '<div><div class="k">Platforms</div><div class="v">'+platformChips(d.platforms)+'</div></div>'+
+          '<div><div class="k">Account</div><div class="v">'+escapeHtml(d.account||"—")+'</div></div>'+
+          '<div><div class="k">Deadline</div><div class="v">'+(d.deadline?fmtDate(d.deadline):"—")+'</div></div>'+
+        '</div>'+
+        (cyc ? (
+          '<div class="cycle-wrap">'+
+            '<div class="cycle-row">'+
+              '<span class="cycle-item"><b class="mono">'+cyc.required+'</b> Required</span><span class="cycle-arrow">→</span>'+
+              '<span class="cycle-item"><b class="mono">'+cyc.completed+'</b> Completed</span><span class="cycle-arrow">→</span>'+
+              '<span class="cycle-item"><b class="mono">'+cyc.remaining+'</b> Remaining</span>'+
+            '</div>'+
+            '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div>'+
+            '<div class="cycle-period">'+escapeHtml(cyc.label)+'</div>'+
+          '</div>'
+        ) : '')+
+        '<div class="dealcard-foot"><span>'+escapeHtml(d.nextAction ? ("Next: "+d.nextAction.slice(0,60)+(d.nextAction.length>60?"…":"")) : "No next action set")+'</span>'+
+          '<button type="button" class="dealcard-view-btn" data-deal-id="'+escapeHtml(d.__id)+'" onclick="try{ openDealDetail(this.getAttribute(\'data-deal-id\')); }catch(e){ console.error(e); toast(\'Could not open that deal - try again\', true); }">View details →</button>'+
+        '</div>'+
+      '</div>';
+    });
+    html += '</div>';
+    setView(html);
+  }
+
+  // Pulls a clean "$X.XX CPM" rate out of a deal's free-text performance
+  // terms, if one is stated plainly. Used only to estimate performance
+  // earnings from REAL logged views — never invents a rate when the
+  // contract's bonus structure isn't a simple CPM (e.g. milestone-only).
+  function parseCpmRate(text){
+    if(!text) return null;
+    var m = /\$\s*([0-9]+(?:\.[0-9]+)?)\s*CPM/i.exec(text);
+    return m ? Number(m[1]) : null;
+  }
+
+  function ddField(label, val){
+    return '<div class="dd-block"><div class="dd-label">'+escapeHtml(label)+'</div>'+
+      (val ? '<div class="dd-text">'+escapeHtml(val)+'</div>' : '<div class="dd-empty-text">Not specified in the contract.</div>')+
+    '</div>';
+  }
+
+  function renderDealDetail(d){
+    var accounts = state.accounts.filter(function(a){ return a.brand===d.brand; });
+    var content = state.content.filter(function(c){ return c.brand===d.brand; }).sort(function(a,b){ return (a.dueDate||"9999").localeCompare(b.dueDate||"9999"); });
+    var payments = state.payments.filter(function(p){ return p.brand===d.brand; });
+    var cyc = dealCycleStats(d);
+    var pct = cyc && cyc.required>0 ? Math.min(100, Math.round(cyc.completed/cyc.required*100)) : 0;
+
+    var receivedTotal = payments.filter(function(p){return p.status==="Paid";}).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+    var pendingTotal = payments.filter(function(p){return p.status==="Pending";}).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+    var lifetimeViews = content.filter(function(c){return c.status==="POSTED";}).reduce(function(s,c){return s+(Number(c.views)||0);},0);
+    var cpmRate = parseCpmRate(d.cpmPay);
+    var estPerf = cpmRate!=null ? (lifetimeViews/1000*cpmRate) : null;
+
+    var html = '<div class="dd-grid"><div class="dd-col">';
+
+    // ---- Overview ----
+    html += panelOpen("Overview");
+    html += '<div class="dd-block dealcard-grid">'+
+      '<div><div class="k">Brand / Campaign</div><div class="v">'+escapeHtml(d.brand||"—")+(d.campaign?' — '+escapeHtml(d.campaign):'')+'</div></div>'+
+      '<div><div class="k">Status</div><div class="v">'+statusBadge(d.status)+'</div></div>'+
+      '<div><div class="k">Base / Guaranteed Pay</div><div class="v">'+(d.guaranteedPay?fmtMoney(d.guaranteedPay)+" / "+(d.payFrequency||"Monthly").toLowerCase():"—")+'</div></div>'+
+      '<div><div class="k">Performance / CPM Pay</div><div class="v">'+escapeHtml(d.cpmPay||"—")+'</div></div>'+
+      '<div><div class="k">Platforms</div><div class="v">'+platformChips(d.platforms)+'</div></div>'+
+      '<div><div class="k">Associated Accounts</div><div class="v">'+(accounts.length ? accounts.map(function(a){
+        return '<span class="dd-acct-chip"><span class="av">'+escapeHtml((a.platform||"?").slice(0,1))+'</span>'+escapeHtml(a.username||"—")+'</span>';
+      }).join('') : '<span class="dd-empty-text">None linked</span>')+'</div></div>'+
+      '<div><div class="k">Start Date</div><div class="v">'+(d.startDate?fmtDate(d.startDate):"—")+'</div></div>'+
+      '<div><div class="k">End Date / Deadline</div><div class="v">'+(d.endDate?fmtDate(d.endDate):(d.deadline?fmtDate(d.deadline):"—"))+'</div></div>'+
+    '</div>';
+    html += panelClose();
+
+    // ---- Requirements (verbatim from the real contract fields) ----
+    html += panelOpen("Requirements");
+    html += ddField("Video Requirement", d.requiredVideos);
+    html += ddField("Posting Frequency / Cadence", d.postingFrequency);
+    html += ddField("Deliverables", d.deliverablesDetail);
+    html += ddField("Content Requirements", d.contentRequirements);
+    html += ddField("Posting Schedule", d.postingSchedule);
+    html += ddField("Contract Rules & Restrictions", d.contractRules);
+    html += ddField("Contract Info", d.contractInfo);
+    html += panelClose();
+
+    // ---- Content ----
+    html += panelOpen("Content", content.length);
+    html += '<div class="dd-block">'+
+      '<button class="btn sm" onclick="addVideoForCurrentDeal()" style="margin-bottom:'+(content.length?"10px":"0")+';">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Add Video'+
+      '</button>'+
+    '</div>';
+    if(content.length){
+      html += '<div class="dd-block">'+content.map(function(c){
+        return '<div class="dd-content-row" onclick="openEdit(\'content\',\''+c.__id+'\')">'+
+          statusBadge(c.status)+
+          '<span class="name">'+escapeHtml(c.name||"Untitled")+'</span>'+
+          '<span class="meta">'+(c.dueDate?("Due "+fmtDate(c.dueDate)):"No due date")+(c.views?(" · "+Number(c.views).toLocaleString()+" views"):"")+'</span>'+
+        '</div>';
+      }).join('')+'</div>';
+    } else {
+      html += '<div class="dd-block"><div class="dd-empty-text">No videos logged for this brand yet.</div></div>';
+    }
+    html += panelClose();
+
+    // ---- Next Action ----
+    html += panelOpen("Next Action");
+    html += '<div class="dd-block">'+(d.nextAction
+      ? '<div class="dd-text" style="color:var(--text);font-size:14px;">'+escapeHtml(d.nextAction)+'</div>'
+      : '<div class="dd-empty-text">No next action set. Add one from Edit Deal.</div>')+'</div>';
+    html += panelClose();
+
+    html += '</div><div class="dd-col">';
+
+    // ---- Deliverable Progress ----
+    html += panelOpen("Deliverable Progress");
+    if(cyc){
+      html += '<div class="dd-block">'+
+        '<div class="cycle-row" style="margin-bottom:10px;">'+
+          '<span class="cycle-item"><b class="mono" style="font-size:18px;">'+cyc.required+'</b> Required</span><span class="cycle-arrow">→</span>'+
+          '<span class="cycle-item"><b class="mono" style="font-size:18px;">'+cyc.completed+'</b> Completed</span><span class="cycle-arrow">→</span>'+
+          '<span class="cycle-item"><b class="mono" style="font-size:18px;">'+cyc.remaining+'</b> Remaining</span>'+
+        '</div>'+
+        '<div class="progress-track" style="height:8px;"><div class="progress-fill" style="width:'+pct+'%"></div></div>'+
+        '<div class="cycle-period" style="margin-top:7px;">'+escapeHtml(cyc.label)+'</div>'+
+      '</div>';
+    } else {
+      html += '<div class="dd-block"><div class="dd-empty-text">No workload cycle set. Add a Target Count, Start Date, and Workload Cycle in Edit Deal to track this here.</div></div>';
+    }
+    html += panelClose();
+
+    // ---- Payments ----
+    html += panelOpen("Payments");
+    html += '<div class="dd-block">'+
+      '<div class="dd-paystat-row">'+
+        '<div class="dd-paystat"><div class="k">Base / Guaranteed</div><div class="v">'+(d.guaranteedPay?fmtMoney(d.guaranteedPay):"—")+'</div></div>'+
+        '<div class="dd-paystat"><div class="k">Received</div><div class="v" style="color:var(--good)">'+fmtMoney(receivedTotal)+'</div></div>'+
+        '<div class="dd-paystat"><div class="k">Pending</div><div class="v" style="color:var(--warn)">'+fmtMoney(pendingTotal)+'</div></div>'+
+        '<div class="dd-paystat"><div class="k">Est. Performance</div><div class="v">'+(estPerf!=null?fmtMoney(estPerf):"—")+'</div></div>'+
+      '</div>'+
+      (estPerf!=null ? '<div class="dd-empty-text" style="margin-top:6px;">Estimated from '+lifetimeViews.toLocaleString()+' real logged views × $'+cpmRate.toFixed(2)+' CPM. Not a guarantee of what\'s owed.</div>' : '')+
+      (d.paymentStructure ? '<div class="dd-label" style="margin-top:12px;">Payment Structure</div><div class="dd-text">'+escapeHtml(d.paymentStructure)+'</div>' : '')+
+    '</div>';
+    if(payments.length){
+      html += '<div class="dd-block">'+payments.map(function(p){
+        return '<div class="dd-content-row" onclick="openEdit(\'payments\',\''+p.__id+'\')">'+
+          statusBadge(p.status)+
+          '<span class="name">'+escapeHtml(p.type||"Payment")+'</span>'+
+          '<span class="meta">'+fmtMoney(p.amount)+(p.date?(" · "+fmtDate(p.date)):"")+'</span>'+
+        '</div>';
+      }).join('')+'</div>';
+    } else {
+      html += '<div class="dd-block"><div class="dd-empty-text">No payments logged for this brand yet.</div></div>';
+    }
+    html += panelClose();
+
+    // ---- Notes & Links ----
+    html += panelOpen("Notes & Links");
+    html += '<div class="dd-block">'+
+      '<div class="field dd-notes-field"><label>Notes</label><textarea id="dd-notes-input" placeholder="Anything worth remembering about this deal…">'+escapeHtml(d.notes||"")+'</textarea></div>'+
+      '<div class="field dd-notes-field" style="margin-top:10px;"><label>Links (one per line)</label><textarea id="dd-links-input" placeholder="https://…">'+escapeHtml(d.links||"")+'</textarea></div>'+
+      '<button class="btn primary sm" style="margin-top:10px;" onclick="saveDealNotes()">Save Notes &amp; Links</button>'+
+    '</div>';
+    var linkLines = (d.links||"").split("\n").map(function(s){return s.trim();}).filter(Boolean);
+    if(linkLines.length){
+      html += '<div class="dd-block dd-links"><div class="dd-label">Quick Links</div>'+linkLines.map(function(l){
+        return '<a href="'+escapeHtml(l)+'" target="_blank" rel="noopener">'+escapeHtml(l)+' ↗</a>';
+      }).join('')+'</div>';
+    }
+    html += panelClose();
+
+    html += '</div></div>';
+    setView(html);
+  }
+
+  // ===================================================================
+  // Content — Kanban
+  // ===================================================================
+  var KANBAN_STAGES = ["IDEA","FILM","EDIT","SUBMIT","APPROVAL","READY","POSTED"];
+  var dragId = null;
+
+  function renderContent(){
+    if(!state.content.length){ setView(emptyState("No videos yet", "Add your first video with the button above — this page fills in only as you log real production work.")); return; }
+
+    // ---- Compact summary: always reflects ALL real videos, unaffected by
+    // the filter bar below, so it stays a stable overview of the pipeline. ----
+    var real = state.content.filter(function(c){ return !c.isSample; });
+    var totalVideos = real.length;
+    var inProgress = real.filter(function(c){ return c.status==="FILM"||c.status==="EDIT"||c.status==="SUBMIT"; }).length;
+    var awaitingApproval = real.filter(function(c){ return c.status==="APPROVAL"; }).length;
+    var readyToPost = real.filter(function(c){ return c.status==="READY"; }).length;
+    var posted = real.filter(function(c){ return c.status==="POSTED"; }).length;
+
+    var html = '<div class="statrow">'+
+      stat("Total Videos", totalVideos, "accent") +
+      stat("In Progress", inProgress, "info") +
+      stat("Awaiting Approval", awaitingApproval, awaitingApproval>0?"warn":"good") +
+      stat("Ready to Post", readyToPost, "good") +
+      stat("Posted", posted, "good") +
+    '</div>';
+
+    // ---- Filter bar ----
+    var brandOpts = Array.from(new Set(state.content.map(function(c){ return c.brand; }).filter(Boolean))).sort();
+    var platformOpts = Array.from(new Set(state.content.map(function(c){ return c.platform; }).filter(Boolean))).sort();
+    html += '<div class="filterbar">'+
+      '<label>Brand</label><select onchange="setContentFilter(\'brand\',this.value)">'+
+        '<option value=""'+(contentFilterBrand===""?" selected":"")+'>All Brands</option>'+
+        brandOpts.map(function(b){ return '<option value="'+escapeHtml(b)+'"'+(contentFilterBrand===b?" selected":"")+'>'+escapeHtml(b)+'</option>'; }).join("")+
+      '</select>'+
+      '<label>Platform</label><select onchange="setContentFilter(\'platform\',this.value)">'+
+        '<option value=""'+(contentFilterPlatform===""?" selected":"")+'>All Platforms</option>'+
+        platformOpts.map(function(p){ return '<option value="'+escapeHtml(p)+'"'+(contentFilterPlatform===p?" selected":"")+'>'+escapeHtml(p)+'</option>'; }).join("")+
+      '</select>'+
+      '<label>Status</label><select onchange="setContentFilter(\'status\',this.value)">'+
+        '<option value=""'+(contentFilterStatus===""?" selected":"")+'>All Statuses</option>'+
+        KANBAN_STAGES.map(function(s){ return '<option value="'+s+'"'+(contentFilterStatus===s?" selected":"")+'>'+s+'</option>'; }).join("")+
+      '</select>'+
+      ((contentFilterBrand||contentFilterPlatform||contentFilterStatus) ? '<button class="clearfilters" onclick="clearContentFilters()">Clear filters</button>' : '')+
+    '</div>';
+
+    // ---- Kanban, filtered ----
+    var rows = state.content.filter(function(c){
+      if(!matchesSearch(c, ["brand","name","platform"])) return false;
+      if(contentFilterBrand && c.brand!==contentFilterBrand) return false;
+      if(contentFilterPlatform && c.platform!==contentFilterPlatform) return false;
+      if(contentFilterStatus && c.status!==contentFilterStatus) return false;
+      return true;
+    });
+
+    html += '<div id="kanban-wrap"><div id="kanban">';
+    KANBAN_STAGES.forEach(function(stage){
+      var items = rows.filter(function(c){ return c.status===stage; }).sort(function(a,b){ return (a.dueDate||"9999").localeCompare(b.dueDate||"9999"); });
+      html += '<div class="kcol" data-stage="'+stage+'" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,\''+stage+'\')">'+
+        '<div class="kcol-head"><span>'+stage+'</span><span class="n">'+items.length+'</span></div><div class="kcol-body">';
+      items.forEach(function(c){
+        var du = c.dueDate ? daysUntil(c.dueDate) : null;
+        var overdue = du!==null && du<0 && stage!=="POSTED";
+        html += '<div class="kcard" draggable="true" ondragstart="onCardDragStart(event,\''+c.__id+'\')" ondragend="onCardDragEnd(event)" onclick="openEdit(\'content\',\''+c.__id+'\')">'+
+          '<div class="kbrand">'+escapeHtml(c.brand||"—")+(c.isSample?' <span class="badge example">Example</span>':'')+'</div>'+
+          '<div class="kname">'+escapeHtml(c.name||"Untitled")+'</div>'+
+          '<div class="kmeta '+(overdue?"overdue":"")+'"><span class="kdue">'+(c.dueDate?("Due "+fmtDate(c.dueDate)):"No due date")+'</span><span>'+escapeHtml(c.platform||"")+'</span></div>'+
+          (c.approvalStatus && c.approvalStatus!=="Not Submitted" ? statusBadge(c.approvalStatus) : '')+
+          (c.referenceLink?'<a href="'+escapeHtml(c.referenceLink)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Reference ↗</a>':'')+
+        '</div>';
+      });
+      if(!items.length){ html += '<div class="cellsub" style="padding:8px 4px;">No videos here.</div>'; }
+      html += '</div></div>';
+    });
+    html += '</div></div>';
+    setView(html);
+  }
+  window.setContentFilter = function(field, value){
+    if(field==="brand") contentFilterBrand = value;
+    else if(field==="platform") contentFilterPlatform = value;
+    else if(field==="status") contentFilterStatus = value;
+    renderContent();
+  };
+  window.clearContentFilters = function(){
+    contentFilterBrand = ""; contentFilterPlatform = ""; contentFilterStatus = "";
+    renderContent();
+  };
+  window.onCardDragStart = function(ev, id){
+    dragId = id;
+    ev.target.classList.add("dragging");
+    ev.dataTransfer.effectAllowed = "move";
+    ev.dataTransfer.setData("text/plain", id);
+  };
+  window.onCardDragEnd = function(ev){ ev.target.classList.remove("dragging"); };
+  window.onColDragOver = function(ev){ ev.preventDefault(); ev.currentTarget.classList.add("dragover"); };
+  window.onColDragLeave = function(ev){ ev.currentTarget.classList.remove("dragover"); };
+  window.onColDrop = async function(ev, stage){
+    ev.preventDefault();
+    ev.currentTarget.classList.remove("dragover");
+    var id = dragId || ev.dataTransfer.getData("text/plain");
+    if(!id || !db) return;
+    var patch = {status: stage};
+    if(stage==="POSTED"){
+      var item = state.content.find(function(c){return c.__id===id;});
+      if(item && !item.postedDate) patch.postedDate = todayStr();
+    }
+    try{ await db.collection("content").doc(id).update(patch); toast("Moved to "+stage); }
+    catch(e){ toast("Couldn't move video", true); }
+    dragId = null;
+  };
+
+  // ===================================================================
+  // Money view
+  // ===================================================================
+  function renderPayments(){
+    var real = function(arr){ return arr.filter(function(x){return !x.isSample;}); };
+    var activeDeals = state.deals.filter(function(d){ return d.status==="Active"; });
+    var guaranteedByDeal = activeDeals.map(function(d){ return {deal:d, g:guaranteedThisMonth(d)}; });
+    var guaranteedEarnedMo = guaranteedByDeal.reduce(function(s,x){return s+x.g.earned;},0);
+    var guaranteedUpcomingMo = guaranteedByDeal.reduce(function(s,x){return s+x.g.upcoming;},0);
+    var guaranteedMo = guaranteedEarnedMo + guaranteedUpcomingMo;
+
+    var realPayments = real(state.payments);
+    var perfPayments = realPayments.filter(function(p){ return !isBasePaymentType(p.type); });
+    var perfTotal = perfPayments.reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+    var owed = realPayments.filter(function(p){ return p.status!=="Paid"; }).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+    var paidThisMonth = realPayments.filter(function(p){ return p.status==="Paid" && isThisMonth(p.datePaid||p.dateEarned||p.date); }).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+    var perfThisMonth = perfPayments.filter(function(p){ return isThisMonth(p.dateEarned||p.datePaid||p.date); }).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+    var projected = guaranteedMo + perfThisMonth;
+
+    var html = '<div class="statrow">'+
+      stat("Guaranteed Revenue", fmtMoney(guaranteedMo), "good", "real pay periods, this month") +
+      stat("Performance Revenue", fmtMoney(perfTotal), "accent", "logged CPM/bonus/referral/per-video") +
+      stat("Pending Payments", fmtMoney(owed), owed>0?"warn":"good", "earned, not yet received") +
+      stat("Paid Revenue", fmtMoney(paidThisMonth), "good", "received this month") +
+    '</div>';
+
+    // ---- Projected This Month (computed, never manually entered) ----
+    html += '<div class="panel"><div class="panel-head"><h2>Projected This Month</h2></div><div class="panel-body pad">'+
+      '<div class="dealcard-grid" style="margin-bottom:2px;">'+
+        '<div><div class="k">Guaranteed Earned</div><div class="v mono" style="font-size:18px;">'+fmtMoney(guaranteedEarnedMo)+'</div></div>'+
+        '<div><div class="k">Guaranteed Upcoming</div><div class="v mono" style="font-size:18px;">'+fmtMoney(guaranteedUpcomingMo)+'</div></div>'+
+        '<div><div class="k">Performance Earned (this month)</div><div class="v mono" style="font-size:18px;">'+fmtMoney(perfThisMonth)+'</div></div>'+
+        '<div><div class="k">Projected Total</div><div class="v mono" style="font-size:18px;color:var(--accent);">'+fmtMoney(projected)+'</div></div>'+
+      '</div>'+
+      '<div class="cellsub" style="margin-top:6px;">Guaranteed pay is counted from each deal\'s real pay periods (weekly periods at their actual per-period amount, monthly deals at their actual monthly amount) — never averaged or prorated into a fractional figure. Upcoming = periods within this month that haven\'t completed yet. Performance income is only what you\'ve actually logged. Nothing here is estimated from views, milestones, or approvals you haven\'t hit yet.</div>'+
+    '</div></div>';
+
+    // ---- Potential Upside — the deal terms themselves, never a guessed dollar figure ----
+    var upsideDeals = activeDeals.filter(function(d){ return d.cpmPay; });
+    html += '<div class="panel"><div class="panel-head"><h2>Potential Upside</h2></div>';
+    if(upsideDeals.length){
+      html += upsideDeals.map(function(d){
+        return '<div class="dd-block"><div class="dd-label">'+escapeHtml(d.brand)+'</div><div class="dd-text">'+escapeHtml(d.cpmPay)+'</div></div>';
+      }).join('');
+      html += '<div class="dd-block"><div class="cellsub">Depends on future views, milestones, approvals, or referrals — not counted in Projected Total until you log it as earned.</div></div>';
+    } else {
+      html += '<div class="dd-block"><div class="dd-empty-text">No active deal has performance terms on file yet.</div></div>';
+    }
+    html += '</div>';
+
+    // ---- Payment Tracker ----
+    var filterOptions = ["", "Expected", "Pending", "Paid"];
+    html += '<div class="panel"><div class="panel-head"><h2>Payment Tracker</h2></div>'+
+      '<div class="panel-body pad" style="padding-bottom:10px;"><div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+        filterOptions.map(function(s){
+          return '<span class="fchip '+(paymentFilterStatus===s?"active":"")+'" onclick="setPaymentFilter(\''+s+'\')">'+(s||"All")+'</span>';
+        }).join("")+
+      '</div></div>';
+
+    var rows = state.payments.filter(function(p){
+      if(!matchesSearch(p,["brand","type","notes"])) return false;
+      if(paymentFilterStatus && p.status!==paymentFilterStatus) return false;
+      return true;
+    }).sort(function(a,b){
+      var ad = a.dateEarned||a.datePaid||a.date||"", bd = b.dateEarned||b.datePaid||b.date||"";
+      return bd.localeCompare(ad);
+    });
+
+    if(!rows.length){
+      var noneMsg = state.payments.length ? "Nothing matches this filter." : "Log guaranteed pay, CPM, bonuses, or referrals as brands confirm them, or use Quick Update.";
+      html += '<div class="panel-body"><div class="empty"><div class="big">No payments logged</div><div>'+escapeHtml(noneMsg)+'</div></div></div></div>';
+    } else {
+      html += '<div class="panel-body" style="padding-top:0;"><div class="tablewrap"><table><thead><tr><th>Brand</th><th>Type</th><th>Amount</th><th>Status</th><th>Earned</th><th>Paid</th><th>Deal</th><th>Notes</th></tr></thead><tbody>';
+      rows.forEach(function(p){
+        var rd = dealForBrand(p.brand);
+        var relatedDealText = rd ? (rd.campaign || rd.brand) : "—";
+        html += '<tr onclick="openEdit(\'payments\',\''+p.__id+'\')">'+
+          '<td class="cellmain">'+escapeHtml(p.brand||"—")+(p.isSample?' <span class="badge example">Example</span>':'')+'</td>'+
+          '<td>'+escapeHtml(normalizePaymentType(p.type))+'</td>'+
+          '<td class="num">'+fmtMoney(p.amount)+'</td>'+
+          '<td>'+statusBadge(p.status)+'</td>'+
+          '<td>'+fmtDate(p.dateEarned||p.date)+'</td>'+
+          '<td>'+fmtDate(p.datePaid || (p.status==="Paid" ? p.date : null))+'</td>'+
+          '<td class="cellsub">'+escapeHtml(relatedDealText)+'</td>'+
+          '<td class="cellsub">'+escapeHtml(p.notes||"")+'</td>'+
+        '</tr>';
+      });
+      html += '</tbody></table></div></div></div>';
+    }
+
+    // ---- Earnings by Deal ----
+    html += '<div class="panel"><div class="panel-head"><h2>Earnings by Deal</h2></div>';
+    if(!activeDeals.length){
+      html += '<div class="dd-block"><div class="dd-empty-text">No active deals yet.</div></div>';
+    } else {
+      html += activeDeals.map(function(d){
+        var dp = real(state.payments).filter(function(p){ return p.brand===d.brand; });
+        var perfEarned = dp.filter(function(p){ return !isBasePaymentType(p.type); }).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+        var gd = guaranteedThisMonth(d);
+        var paidD = dp.filter(function(p){ return p.status==="Paid"; }).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+        // Still Owed is based on what's actually earned so far (guaranteed-earned + performance-earned) —
+        // upcoming guaranteed periods that haven't completed yet are never counted as "owed".
+        var stillOwed = Math.max(0, (gd.earned + perfEarned) - paidD);
+        return '<div class="dd-block">'+
+          '<div class="dd-label" style="font-size:13px;color:var(--text);margin-bottom:8px;">'+escapeHtml(d.brand)+'</div>'+
+          '<div class="dealcard-grid">'+
+            '<div><div class="k">Guaranteed Earned</div><div class="v mono">'+fmtMoney(gd.earned)+'</div></div>'+
+            '<div><div class="k">Guaranteed Upcoming</div><div class="v mono">'+fmtMoney(gd.upcoming)+'</div></div>'+
+            '<div><div class="k">Performance Earned</div><div class="v mono">'+fmtMoney(perfEarned)+'</div></div>'+
+            '<div><div class="k">Paid</div><div class="v mono" style="color:var(--good);">'+fmtMoney(paidD)+'</div></div>'+
+            '<div><div class="k">Still Owed</div><div class="v mono" style="color:'+(stillOwed>0?"var(--warn)":"var(--good)")+';">'+fmtMoney(stillOwed)+'</div></div>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+    }
+    html += '</div>';
+
+    setView(html);
+  }
+  window.setPaymentFilter = function(s){
+    paymentFilterStatus = s;
+    renderPayments();
+  };
+
+  // ===================================================================
+  // Accounts view
+  // ===================================================================
+  function renderAccounts(){
+    var rows = state.accounts.filter(function(a){ return matchesSearch(a, ["platform","username","brand"]); }).sort(function(a,b){ return (a.brand||"").localeCompare(b.brand||""); });
+    if(!state.accounts.length){ setView(emptyState("No accounts yet", "Track the accounts you post from with the button above.")); return; }
+    if(!rows.length){ setView(emptyState("No matches", "Nothing matches that search.")); return; }
+    var html = '<div class="cardgrid">';
+    rows.forEach(function(a){
+      var st = accountStats(a);
+      html += '<div class="acctcard" onclick="openAccountDetail(\''+a.__id+'\')">'+
+        '<div class="acct-top"><div class="acct-avatar">'+escapeHtml((a.platform||"?").slice(0,1))+'</div><div><div class="acct-handle">'+escapeHtml(a.username||"—")+'</div><div class="acct-plat">'+escapeHtml(a.platform||"—")+'</div></div>'+
+        '<div style="margin-left:auto;">'+statusBadge(a.accountStatus||"Active")+'</div></div>'+
+        '<div class="acct-row"><span class="k">Brand</span><span>'+escapeHtml(a.brand||"—")+'</span></div>'+
+        '<div class="acct-row"><span class="k">Warm-up</span>'+statusBadge(a.warmupStatus||"Not Started")+'</div>'+
+        '<div class="acct-row"><span class="k">Requirement</span><span>'+escapeHtml(a.postingRequirements||"—")+'</span></div>'+
+        '<div class="acct-row"><span class="k">Last Post</span><span>'+(st.lastPostDate?fmtDate(st.lastPostDate):"—")+'</span></div>'+
+        accountProgressBlock(st)+
+      '</div>';
+    });
+    html += '</div>';
+    setView(html);
+  }
+  // Compact progress block appended to an account card (and reused, with a
+  // bigger bar, in the Account Detail view). Only asserts a Required count
+  // or an On Track/Behind judgment when the account's own Posting
+  // Requirement text actually parses into a real "<N> posts/<period>" —
+  // otherwise it just shows what's been logged, no invented target or pace.
+  function accountProgressBlock(st, big){
+    var barHeight = big ? 'height:8px;' : '';
+    if(st.required==null){
+      return '<div class="acct-progress"><div class="acct-progress-note">'+
+        (st.postedAllTime ? st.postedAllTime+' post'+(st.postedAllTime===1?"":"s")+' logged (no parseable posting requirement to track against)' : 'No posts logged yet, and no parseable posting requirement to track against.')+
+      '</div></div>';
+    }
+    var pct = st.required>0 ? Math.min(100, Math.round(st.periodPosted/st.required*100)) : 0;
+    return '<div class="acct-progress">'+
+      '<div class="progress-wrap">'+
+        '<div class="progress-label"><span>Posts '+escapeHtml(st.periodLabel)+'</span><span>'+st.periodPosted+' / '+st.required+'</span></div>'+
+        '<div class="progress-track" style="'+barHeight+'"><div class="progress-fill" style="width:'+pct+'%"></div></div>'+
+      '</div>'+
+      '<div class="acct-row"><span class="k">Remaining</span><span>'+st.remaining+'</span></div>'+
+      '<div class="acct-row"><span class="k">Status</span>'+statusBadge(st.status)+'</div>'+
+    '</div>';
+  }
+
+  function renderAccountDetail(a){
+    var st = accountStats(a);
+    var deal = dealForBrand(a.brand);
+    var posts = state.content.filter(function(c){ return contentBelongsToAccount(c, a); }).sort(function(x,y){
+      var xd = x.postedDate||x.dueDate||"", yd = y.postedDate||y.dueDate||"";
+      return yd.localeCompare(xd);
+    });
+
+    var html = '<div class="dd-grid"><div class="dd-col">';
+
+    // ---- Overview ----
+    html += panelOpen("Overview");
+    html += '<div class="dd-block dealcard-grid">'+
+      '<div><div class="k">Handle</div><div class="v">'+escapeHtml(a.username||"—")+'</div></div>'+
+      '<div><div class="k">Platform</div><div class="v">'+escapeHtml(a.platform||"—")+'</div></div>'+
+      '<div><div class="k">Brand / Deal</div><div class="v">'+escapeHtml(a.brand||"—")+'</div></div>'+
+      '<div><div class="k">Account Status</div><div class="v">'+statusBadge(a.accountStatus||"Active")+'</div></div>'+
+      '<div><div class="k">Warm-up Status</div><div class="v">'+statusBadge(a.warmupStatus||"Not Started")+'</div></div>'+
+      '<div><div class="k">Posting Requirement</div><div class="v">'+escapeHtml(a.postingRequirements||"—")+'</div></div>'+
+    '</div>';
+    html += panelClose();
+
+    // ---- Posting Progress ----
+    html += panelOpen("Posting Progress");
+    html += '<div class="dd-block">'+accountProgressBlock(st, true)+
+      '<div class="acct-row" style="margin-top:9px;"><span class="k">Last Post</span><span>'+(st.lastPostDate?fmtDate(st.lastPostDate):"—")+'</span></div>'+
+    '</div>';
+    if(!deal){
+      html += '<div class="dd-block"><div class="dd-empty-text">No matching deal found for brand "'+escapeHtml(a.brand||"")+'".</div></div>';
+    }
+    html += panelClose();
+
+    html += '</div><div class="dd-col">';
+
+    // ---- Logged Videos / Posts ----
+    html += panelOpen("Logged Videos & Posts", posts.length);
+    if(posts.length){
+      html += '<div class="dd-block">'+posts.map(function(c){
+        var dt = c.postedDate || c.dueDate;
+        return '<div class="dd-content-row" onclick="openEdit(\'content\',\''+c.__id+'\')">'+
+          statusBadge(c.status)+
+          '<span class="name">'+escapeHtml(c.name||"Untitled")+'</span>'+
+          '<span class="meta">'+(dt?fmtDate(dt):"No date")+(c.views?(" · "+Number(c.views).toLocaleString()+" views"):"")+'</span>'+
+        '</div>';
+      }).join('')+'</div>';
+    } else {
+      html += '<div class="dd-block"><div class="dd-empty-text">No videos logged for this account yet.</div></div>';
+    }
+    html += panelClose();
+
+    // ---- Notes ----
+    html += panelOpen("Notes");
+    html += '<div class="dd-block">'+
+      '<div class="field dd-notes-field"><label>Notes</label><textarea id="ad-notes-input" placeholder="Anything worth remembering about this account…">'+escapeHtml(a.notes||"")+'</textarea></div>'+
+      '<button class="btn primary sm" style="margin-top:10px;" onclick="saveAccountNotes()">Save Notes</button>'+
+    '</div>';
+    html += panelClose();
+
+    html += '</div></div>';
+    setView(html);
+  }
+
+  // ===================================================================
+  // View shell
+  // ===================================================================
+  var TITLES = {
+    today:{t:"Today", s:"Tasks by stage, plus anything overdue or due today."},
+    deals:{t:"Active Deals", s:"Every brand deal, its terms, and where it stands."},
+    content:{t:"Content Pipeline", s:"Drag a card to move it between stages."},
+    payments:{t:"Money", s:"Guaranteed, performance, pending, and paid revenue."},
+    accounts:{t:"Accounts", s:"The accounts you post from and their status."},
+  };
+  function setView(html){ document.getElementById("view-root").innerHTML = html; }
+  function setActions(html){ document.getElementById("view-actions").innerHTML = html; }
+
+  function render(){
+    if(!state.dbAvailable){
+      document.getElementById("view-title").textContent = TITLES[activeTab].t;
+      document.getElementById("view-sub").textContent = "Waiting for a data connection…";
+      updateCounts();
+      return;
+    }
+    updateCounts();
+    if(activeTab==="deals" && dealDetailId){
+      var dd = state.deals.find(function(x){ return x.__id===dealDetailId; });
+      if(dd){
+        try{
+          document.getElementById("view-title").textContent = dd.brand || "Deal";
+          document.getElementById("view-sub").textContent = dd.campaign || "Deal detail";
+          setActions(
+            '<button class="btn ghost" onclick="closeDealDetail()">'+
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>All Deals</button>'+
+            '<button class="btn primary" onclick="openEdit(\'deals\',\''+dd.__id+'\')">Edit Deal</button>'
+          );
+          renderDealDetail(dd);
+        }catch(e){
+          console.error("Failed to render deal detail:", e);
+          toast("Couldn't open that deal's detail view — try again", true);
+          dealDetailId = null;
+        }
+        return;
+      }
+      dealDetailId = null; // the deal was deleted elsewhere — fall back to the list
+    }
+    if(activeTab==="accounts" && accountDetailId){
+      var da = state.accounts.find(function(x){ return x.__id===accountDetailId; });
+      if(da){
+        try{
+          document.getElementById("view-title").textContent = da.username || "Account";
+          document.getElementById("view-sub").textContent = (da.platform||"Account")+(da.brand?" · "+da.brand:"");
+          setActions(
+            '<button class="btn ghost" onclick="closeAccountDetail()">'+
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>All Accounts</button>'+
+            '<button class="btn primary" onclick="openEdit(\'accounts\',\''+da.__id+'\')">Edit Account</button>'
+          );
+          renderAccountDetail(da);
+        }catch(e){
+          console.error("Failed to render account detail:", e);
+          toast("Couldn't open that account's detail view — try again", true);
+          accountDetailId = null;
+        }
+        return;
+      }
+      accountDetailId = null; // the account was deleted elsewhere — fall back to the grid
+    }
+    document.getElementById("view-title").textContent = TITLES[activeTab].t;
+    document.getElementById("view-sub").textContent = TITLES[activeTab].s;
+    setActions("");
+    if(activeTab==="today") renderToday();
+    else if(activeTab==="deals") renderDeals();
+    else if(activeTab==="content") renderContent();
+    else if(activeTab==="payments") renderPayments();
+    else if(activeTab==="accounts") renderAccounts();
+  }
+  window.openDealDetail = function(id){
+    if(!id) return;
+    dealDetailId = id;
+    render();
+  };
+  window.closeDealDetail = function(){ dealDetailId = null; render(); };
+  window.openAccountDetail = function(id){
+    if(!id) return;
+    accountDetailId = id;
+    render();
+  };
+  window.closeAccountDetail = function(){ accountDetailId = null; render(); };
+
+  // ===================================================================
+  // Modal / CRUD
+  // ===================================================================
+  window.openNew = function(kind, presetFields){
+    var schema = SCHEMAS[kind];
+    var data = {};
+    schema.fields.forEach(function(f){ if(f.default) data[f.key] = f.default; });
+    if(presetFields) Object.assign(data, presetFields);
+    currentEdit = {kind:kind, id:null, data:data};
+    renderModal();
+  };
+  window.addVideoForCurrentDeal = function(){
+    var d = state.deals.find(function(x){ return x.__id===dealDetailId; });
+    if(!d) return;
+    openNew('content', {brand: d.brand});
+  };
+  window.saveDealNotes = async function(){
+    if(!dealDetailId){ return; }
+    if(!db){ toast("No data connection — can't save", true); return; }
+    var notesEl = document.getElementById('dd-notes-input');
+    var linksEl = document.getElementById('dd-links-input');
+    if(!notesEl || !linksEl) return;
+    try{
+      await db.collection('deals').doc(dealDetailId).update({ notes: notesEl.value, links: linksEl.value });
+      toast('Notes & links saved');
+    }catch(e){ toast('Could not save — try again', true); }
+  };
+  window.saveAccountNotes = async function(){
+    if(!accountDetailId){ return; }
+    if(!db){ toast("No data connection — can't save", true); return; }
+    var notesEl = document.getElementById('ad-notes-input');
+    if(!notesEl) return;
+    try{
+      await db.collection('accounts').doc(accountDetailId).update({ notes: notesEl.value });
+      toast('Notes saved');
+    }catch(e){ toast('Could not save — try again', true); }
+  };
+  window.openEdit = function(kind, id){
+    var schema = SCHEMAS[kind];
+    var rec = state[schema.collection].find(function(r){ return r.__id===id; });
+    if(!rec) return;
+    currentEdit = {kind:kind, id:id, data:Object.assign({}, rec)};
+    renderModal();
+  };
+
+  // ===================================================================
+  // "New Video" quick-add form — 3 required fields, everything else
+  // tucked behind an optional "+ Add details" toggle so the modal never
+  // needs scrolling. Every field below still exists in the DOM (just
+  // hidden via CSS when collapsed), matching SCHEMAS.content.fields
+  // exactly by data-key, so the unmodified saveCurrent()/deleteCurrent()
+  // keep working without any change. Editing an existing video still
+  // uses the full generic form (renderModal's normal path) — this only
+  // replaces the CREATE flow.
+  // ===================================================================
+  var nvAdvancedExpanded = false;
+  function nvField(key, label, type, val, opts){
+    opts = opts || {};
+    var input;
+    if(type==="textarea"){
+      input = '<textarea data-key="'+key+'" placeholder="'+escapeHtml(opts.placeholder||"")+'">'+escapeHtml(val||"")+'</textarea>';
+    } else {
+      input = '<input data-key="'+key+'" type="'+type+'" placeholder="'+escapeHtml(opts.placeholder||"")+'" value="'+escapeHtml(val==null?"":val)+'">';
+    }
+    return '<div class="field nv-field" data-advfield="'+key+'"><label>'+escapeHtml(label)+'</label>'+input+'</div>';
+  }
+  function nvSelectField(key, label, options, val){
+    return '<div class="field nv-field" data-advfield="'+key+'"><label>'+escapeHtml(label)+'</label><select data-key="'+key+'">'+
+      options.map(function(o){ return '<option value="'+escapeHtml(o)+'" '+(o===val?"selected":"")+'>'+escapeHtml(o)+'</option>'; }).join("")+
+    '</select></div>';
+  }
+  function renderNewVideoForm(){
+    nvAdvancedExpanded = false;
+    var brandOptions = Array.from(new Set(state.deals.map(function(d){ return d.brand; }).filter(Boolean)));
+    var presetBrand = currentEdit.data.brand || "";
+    var stageVal = currentEdit.data.status || "IDEA";
+
+    var html = '';
+    html += '<div class="field"><label>Brand / Deal *</label>';
+    if(brandOptions.length){
+      html += '<select data-key="brand" onchange="onNewVideoBrandChange()">'+
+        (brandOptions.indexOf(presetBrand)===-1 ? '<option value="">Select a brand…</option>' : '') +
+        brandOptions.map(function(b){ return '<option value="'+escapeHtml(b)+'" '+(b===presetBrand?"selected":"")+'>'+escapeHtml(b)+'</option>'; }).join("") +
+      '</select>';
+    } else {
+      html += '<input data-key="brand" type="text" placeholder="Brand name" value="'+escapeHtml(presetBrand)+'" oninput="onNewVideoBrandChange()">'+
+        '<div class="cellsub" style="margin-top:2px;">No deals logged yet — type the brand name.</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="field"><label>Video Title / Number *</label>'+
+      '<input data-key="name" type="text" placeholder="e.g. Video 4" value="'+escapeHtml(currentEdit.data.name||"")+'"></div>';
+
+    html += '<div class="field"><label>Pipeline Stage *</label><select data-key="status" onchange="onNewVideoStageChange()">'+
+      KANBAN_STAGES.map(function(s){ return '<option value="'+s+'" '+(s===stageVal?"selected":"")+'>'+s+'</option>'; }).join("")+
+    '</select></div>';
+
+    html += '<div id="nv-advanced-toggle" class="nv-toggle" onclick="toggleNewVideoAdvanced()">+ Add details</div>';
+
+    html += '<div id="nv-advanced" class="nv-advanced">';
+    html += nvField("platform", "Platform", "text", currentEdit.data.platform, {placeholder:"TikTok"});
+    html += '<div class="field nv-field" data-advfield="account"><label>Posting Account</label><select data-key="account"><option value="">No specific account</option></select></div>';
+    html += nvField("dueDate", "Due Date", "date", currentEdit.data.dueDate);
+    html += nvField("postedDate", "Post Date", "date", currentEdit.data.postedDate);
+    html += nvField("referenceLink", "Reference Video / Link", "url", currentEdit.data.referenceLink);
+    html += nvField("hook", "Hook / Concept", "textarea", currentEdit.data.hook);
+    html += nvField("script", "Script / Notes", "textarea", currentEdit.data.script);
+    html += nvSelectField("approvalStatus", "Approval Status", ["Not Submitted","Pending","Approved","Revisions Needed"], currentEdit.data.approvalStatus||"Not Submitted");
+    html += nvField("postedUrl", "Posted URL", "url", currentEdit.data.postedUrl);
+    html += nvField("views", "Current Views", "number", currentEdit.data.views);
+    html += '</div>';
+
+    document.getElementById("modal-body").innerHTML = html;
+    applyNewVideoSmartVisibility();
+    updateNewVideoPlatformField(true);
+  }
+  // Which extra fields a pipeline stage auto-reveals, beyond whatever the
+  // user has manually expanded. Every other stage keeps everything
+  // collapsed — nothing here is required, it's just a visibility hint.
+  function autoFieldsForStage(stage){
+    if(stage==="POSTED") return ["platform","account","postedDate","postedUrl","views"];
+    if(stage==="APPROVAL") return ["approvalStatus"];
+    return [];
+  }
+  function applyNewVideoSmartVisibility(){
+    var stageEl = document.querySelector('#modal-body [data-key="status"]');
+    var stage = stageEl ? stageEl.value : "IDEA";
+    var autoFields = autoFieldsForStage(stage);
+    var container = document.getElementById("nv-advanced");
+    var toggleEl = document.getElementById("nv-advanced-toggle");
+    if(!container) return;
+    var anyVisible = nvAdvancedExpanded || autoFields.length>0;
+    container.style.display = anyVisible ? "flex" : "none";
+    container.querySelectorAll("[data-advfield]").forEach(function(el){
+      var key = el.getAttribute("data-advfield");
+      var show = nvAdvancedExpanded || autoFields.indexOf(key)>-1;
+      el.style.display = show ? "" : "none";
+    });
+    if(toggleEl) toggleEl.textContent = nvAdvancedExpanded ? "− Hide details" : (autoFields.length ? "+ Add more details" : "+ Add details");
+  }
+  window.toggleNewVideoAdvanced = function(){
+    nvAdvancedExpanded = !nvAdvancedExpanded;
+    applyNewVideoSmartVisibility();
+  };
+  window.onNewVideoStageChange = function(){ applyNewVideoSmartVisibility(); };
+  // A deal's Platforms field is real contract data (free-text, comma-
+  // separated) — we only ever read it, never invent a platform it doesn't
+  // list.
+  function dealPlatformsFor(brand){
+    var d = state.deals.find(function(x){ return x.brand===brand; });
+    if(!d || !d.platforms) return [];
+    return d.platforms.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+  }
+  function updateNewVideoPlatformField(initial){
+    var brandEl = document.querySelector('#modal-body [data-key="brand"]');
+    var brand = brandEl ? brandEl.value : "";
+    var wrap = document.querySelector('#modal-body [data-advfield="platform"]');
+    if(!wrap) return;
+    var currentInput = wrap.querySelector('[data-key="platform"]');
+    var currentVal = currentInput ? currentInput.value : "";
+    var plats = dealPlatformsFor(brand);
+    if(plats.length===1){
+      // Exactly one valid platform for this deal — auto-fill it, but stay
+      // editable. On the initial render (modal just opened) only fill an
+      // empty field; once the user is actively choosing a brand, keep it
+      // synced to that deal's one platform.
+      if(!initial || !currentVal){
+        wrap.innerHTML = '<label>Platform</label><input data-key="platform" type="text" value="'+escapeHtml(plats[0])+'" oninput="onNewVideoPlatformChange()">'+
+          '<div class="cellsub" style="margin-top:2px;">Auto-filled from '+escapeHtml(brand)+"'s platform — edit if needed.</div>";
+      }
+    } else if(plats.length>1){
+      // Multiple valid platforms — let the user choose from exactly what
+      // the contract lists, instead of a free-text field.
+      var keepVal = plats.indexOf(currentVal)>-1 ? currentVal : "";
+      wrap.innerHTML = '<label>Platform</label><select data-key="platform" onchange="onNewVideoPlatformChange()"><option value="">Select a platform…</option>'+
+        plats.map(function(p){ return '<option value="'+escapeHtml(p)+'" '+(p===keepVal?"selected":"")+'>'+escapeHtml(p)+'</option>'; }).join("")+
+      '</select>';
+    } else if(!wrap.querySelector('input[data-key="platform"]')){
+      // No deal match / no platform data — plain free-text field.
+      wrap.innerHTML = '<label>Platform</label><input data-key="platform" type="text" placeholder="TikTok" value="'+escapeHtml(currentVal)+'" oninput="onNewVideoPlatformChange()">';
+    }
+    updateNewVideoAccountField(initial);
+  }
+  window.onNewVideoBrandChange = function(){ updateNewVideoPlatformField(false); };
+  window.onNewVideoPlatformChange = function(){ updateNewVideoAccountField(false); };
+  // Rebuilds the Posting Account dropdown to only the accounts that match
+  // this video's current Brand and Platform fields — never a broader list.
+  function updateNewVideoAccountField(initial){
+    var brandEl = document.querySelector('#modal-body [data-key="brand"]');
+    var brand = brandEl ? brandEl.value : "";
+    var platEl = document.querySelector('#modal-body [data-key="platform"]');
+    var platform = platEl ? platEl.value : "";
+    var sel = document.querySelector('#modal-body [data-key="account"]');
+    if(!sel) return;
+    var selectedId = initial ? (currentEdit.data.account || "") : sel.value;
+    var r = accountOptionsHtml(brand, platform, selectedId);
+    sel.innerHTML = r.html;
+  }
+
+  // The "New Video" form is a deliberately tiny, non-generic layout (see
+  // renderNewVideoForm below) instead of the full schema-driven form every
+  // other Add/Edit modal uses — friction reduction was the whole point of
+  // this feature. Editing an EXISTING video still goes through the normal
+  // generic path below (untouched), which is the full detailed Video View.
+  function isNewVideoModal(){
+    return currentEdit.kind==="content" && !currentEdit.id;
+  }
+  function renderModal(){
+    var schema = SCHEMAS[currentEdit.kind];
+    var modalEl = document.getElementById("modal");
+    modalEl.classList.toggle("wide", currentEdit.kind==="deals" || (currentEdit.kind==="content" && !isNewVideoModal()));
+    document.getElementById("modal-title").textContent = (currentEdit.id ? "Edit " : "New ") + schema.label + (currentEdit.data.isSample ? " (Example)" : "");
+    document.getElementById("modal-delete").style.display = currentEdit.id ? "inline-flex" : "none";
+    if(isNewVideoModal()){
+      renderNewVideoForm();
+      document.getElementById("modal-backdrop").classList.add("open");
+      return;
+    }
+    var brandOptions = state.deals.map(function(d){ return d.brand; }).filter(Boolean);
+    var uniq = Array.from(new Set(brandOptions));
+    var dl = '<datalist id="dl-deals">'+uniq.map(function(b){ return '<option value="'+escapeHtml(b)+'">'; }).join("")+'</datalist>';
+    var html = dl;
+    schema.fields.forEach(function(f){
+      if(f.section){ html += '<div class="form-section">'+escapeHtml(f.section)+'</div>'; return; }
+      var val = currentEdit.data[f.key];
+      html += '<div class="field"><label>'+escapeHtml(f.label)+(f.required?' *':'')+'</label>';
+      if(f.type==="select"){
+        html += '<select data-key="'+f.key+'">'+f.options.map(function(o){
+          var lbl = (f.optionLabels && f.optionLabels[o]) ? f.optionLabels[o] : o;
+          return '<option value="'+escapeHtml(o)+'" '+(val===o?"selected":"")+'>'+escapeHtml(lbl)+'</option>';
+        }).join("")+'</select>';
+      } else if(f.type==="accountselect"){
+        // Options are filled in after the modal body is inserted (and kept
+        // in sync as Brand/Platform change) by updateContentAccountOptions()
+        // below — never a static list baked in at render time.
+        html += '<select data-key="'+f.key+'"><option value="">No specific account</option></select>';
+      } else if(f.type==="textarea"){
+        html += '<textarea data-key="'+f.key+'" placeholder="'+escapeHtml(f.placeholder||"")+'">'+escapeHtml(val||"")+'</textarea>';
+      } else {
+        var listAttr = f.datalist ? 'list="dl-'+f.datalist+'"' : '';
+        html += '<input data-key="'+f.key+'" type="'+f.type+'" '+listAttr+' placeholder="'+escapeHtml(f.placeholder||"")+'" value="'+escapeHtml(val==null?"":val)+'">';
+      }
+      if(f.hint) html += '<div class="cellsub" style="margin-top:2px;">'+escapeHtml(f.hint)+'</div>';
+      html += '</div>';
+    });
+    if(currentEdit.kind==="deals"){
+      var cyc = dealCycleStats(currentEdit.data);
+      html += '<div class="form-section">Current Cycle</div>';
+      if(cyc){
+        html += '<div class="dealcard-grid" style="margin-bottom:2px;">'+
+          '<div><div class="k">Required</div><div class="v mono">'+cyc.required+'</div></div>'+
+          '<div><div class="k">Completed</div><div class="v mono">'+cyc.completed+'</div></div>'+
+          '<div><div class="k">Remaining</div><div class="v mono">'+cyc.remaining+'</div></div>'+
+          '<div><div class="k">Current Period</div><div class="v">'+escapeHtml(cyc.label)+'</div></div>'+
+        '</div>';
+      } else {
+        html += '<div class="cellsub">Set a Workload Cycle above (and a Target Count / Start Date) to track a recurring requirement here.</div>';
+      }
+    }
+    if(currentEdit.kind==="deals" && currentEdit.id){
+      var related = state.content.filter(function(c){ return c.brand===currentEdit.data.brand; });
+      html += '<div class="form-section">Content for this campaign</div>';
+      if(related.length){
+        html += '<div class="assoc-list">'+related.map(function(c){
+          return '<div class="assoc-item"><span>'+escapeHtml(c.name||"Untitled")+(c.isSample?' <span class="badge example">Example</span>':'')+'</span>'+statusBadge(c.status)+'</div>';
+        }).join("")+'</div>';
+      } else {
+        html += '<div class="cellsub">No videos logged for this brand yet.</div>';
+      }
+    }
+    if(currentEdit.kind==="content" && currentEdit.id){
+      var vDeal = state.deals.find(function(d){ return d.brand===currentEdit.data.brand; });
+      var vViews = Number(currentEdit.data.views)||0;
+      var vCpm = vDeal ? parseCpmRate(vDeal.cpmPay) : null;
+      html += '<div class="form-section">Performance / CPM Earnings</div>';
+      if(!vDeal){
+        html += '<div class="cellsub">No matching deal found for brand "'+escapeHtml(currentEdit.data.brand||"")+'" — link this video to a real deal brand to estimate earnings.</div>';
+      } else if(vCpm==null){
+        html += '<div class="cellsub">This deal\'s compensation isn\'t a simple CPM rate ("'+escapeHtml(vDeal.cpmPay||"none specified")+'"), so no per-video earnings estimate is calculated.</div>';
+      } else {
+        var vEst = vViews/1000*vCpm;
+        html += '<div class="dealcard-grid" style="margin-bottom:2px;">'+
+          '<div><div class="k">Views</div><div class="v mono">'+vViews.toLocaleString()+'</div></div>'+
+          '<div><div class="k">CPM Rate</div><div class="v mono">$'+vCpm+'</div></div>'+
+          '<div><div class="k">Est. Earnings</div><div class="v mono">$'+vEst.toFixed(2)+'</div></div>'+
+        '</div><div class="cellsub">Conservative estimate from logged views × this deal\'s stated CPM rate. Not a guarantee of actual payout.</div>';
+      }
+    }
+    document.getElementById("modal-body").innerHTML = html;
+    if(currentEdit.kind==="content"){
+      updateContentAccountOptions(false);
+      var brandField = document.querySelector('#modal-body [data-key="brand"]');
+      var platformField = document.querySelector('#modal-body [data-key="platform"]');
+      if(brandField) brandField.addEventListener("input", function(){ updateContentAccountOptions(true); });
+      if(platformField) platformField.addEventListener("input", function(){ updateContentAccountOptions(true); });
+    }
+    document.getElementById("modal-backdrop").classList.add("open");
+  }
+  // Keeps the full Video View's Posting Account dropdown scoped to this
+  // video's current Brand and Platform text fields, same rule as the New
+  // Video quick-add form. preserveCurrent=true re-filters around whatever
+  // the user has already picked; false resets to the saved record's value.
+  function updateContentAccountOptions(preserveCurrent){
+    var sel = document.querySelector('#modal-body [data-key="account"]');
+    if(!sel) return;
+    var brandEl = document.querySelector('#modal-body [data-key="brand"]');
+    var platEl = document.querySelector('#modal-body [data-key="platform"]');
+    var brand = brandEl ? brandEl.value : "";
+    var platform = platEl ? platEl.value : "";
+    var selectedId = preserveCurrent ? sel.value : (currentEdit.data.account || "");
+    var r = accountOptionsHtml(brand, platform, selectedId);
+    sel.innerHTML = r.html;
+  }
+  window.closeModal = function(){
+    document.getElementById("modal-backdrop").classList.remove("open");
+    currentEdit = null;
+  };
+  window.saveCurrent = async function(){
+    if(!currentEdit) return;
+    if(!db){ toast("No data connection — can't save", true); return; }
+    var schema = SCHEMAS[currentEdit.kind];
+    var data = {};
+    var missing = false;
+    schema.fields.forEach(function(f){
+      if(f.section) return;
+      var el = document.querySelector('[data-key="'+f.key+'"]');
+      if(!el) return;
+      var v = el.value;
+      if(f.required && !v){ missing = true; el.style.outline="2px solid var(--critical)"; }
+      if(f.type==="number"){ data[f.key] = v===""? null : Number(v); }
+      else { data[f.key] = v; }
+    });
+    if(missing){ toast("Fill in the required fields", true); return; }
+    if(currentEdit.kind==="tasks" && !currentEdit.id){ data.done = false; }
+    try{
+      if(currentEdit.id){ await db.collection(schema.collection).doc(currentEdit.id).set(Object.assign({}, currentEdit.data, data)); }
+      else { await db.collection(schema.collection).add(data); }
+      toast("Saved");
+      closeModal();
+    }catch(e){ toast("Couldn't save: "+(e && e.code ? e.code : "error"), true); }
+  };
+  window.deleteCurrent = async function(){
+    if(!currentEdit || !currentEdit.id || !db) return;
+    var schema = SCHEMAS[currentEdit.kind];
+    try{ await db.collection(schema.collection).doc(currentEdit.id).delete(); toast("Deleted"); closeModal(); }
+    catch(e){ toast("Couldn't delete", true); }
+  };
+  document.getElementById("modal-backdrop").addEventListener("click", function(e){ if(e.target.id==="modal-backdrop") closeModal(); });
+
+  // ===================================================================
+  // Quick Update — natural language box
+  // ===================================================================
+  function findContentByQuery(q){
+    q = (q||"").toLowerCase();
+    var numMatch = q.match(/(\d+)/);
+    var num = numMatch ? numMatch[1] : null;
+    var best = null, bestScore = 0;
+    state.content.forEach(function(c){
+      var brand = (c.brand||"").toLowerCase();
+      var name = (c.name||"").toLowerCase();
+      var score = 0;
+      if(brand && q.indexOf(brand)>-1) score += 2;
+      if(num && name.indexOf(num)>-1) score += 2;
+      if(!num && name && q.indexOf(name)>-1) score += 1;
+      if(score>bestScore){ bestScore=score; best=c; }
+    });
+    return bestScore>0 ? best : null;
+  }
+  function findBrand(q){
+    q = (q||"").toLowerCase();
+    var best = null;
+    state.deals.forEach(function(d){
+      var b = (d.brand||"").toLowerCase();
+      if(b && q.indexOf(b)>-1 && (!best || b.length>best.length)) best = d.brand;
+    });
+    return best || (q.trim() ? q.trim().replace(/\b\w/g, function(c){return c.toUpperCase();}) : null);
+  }
+  function regexParse(text){
+    var t = text.trim();
+    var m;
+    if((m = t.match(/^posted\s+(.+)$/i))){
+      var item = findContentByQuery(m[1]);
+      if(item) return {action:"move_stage", contentId:item.__id, stage:"POSTED"};
+      return {action:"unknown", reason:"couldn't find a matching video for \""+m[1]+"\""};
+    }
+    if((m = t.match(/^(.+?)\s+has\s+([\d,]+)\s+views?$/i))){
+      var item2 = findContentByQuery(m[1]);
+      var views = Number(m[2].replace(/,/g,""));
+      if(item2) return {action:"set_views", contentId:item2.__id, views:views};
+      return {action:"unknown", reason:"couldn't find a matching video for \""+m[1]+"\""};
+    }
+    if((m = t.match(/^(.+?)\s+paid\s+me\s+\$?([\d,.]+)/i))){
+      var brand = findBrand(m[1]);
+      var amount = Number(m[2].replace(/,/g,""));
+      return {action:"log_payment", brand:brand, amount:amount, status:"Paid"};
+    }
+    if((m = t.match(/^(.+?)\s+owes\s+me\s+\$?([\d,.]+)(?:\s+for\s+(.+))?\.?$/i))){
+      var brandOw = findBrand(m[1]);
+      var amountOw = Number(m[2].replace(/,/g,""));
+      var noteOw = m[3] || "";
+      var typeOw = /video/i.test(noteOw) ? "Per Video" : (/referral/i.test(noteOw) ? "Referral" : (/bonus/i.test(noteOw) ? "Bonus" : (/cpm/i.test(noteOw) ? "CPM" : "Other")));
+      return {action:"log_payment", brand:brandOw, amount:amountOw, status:"Pending", type:typeOw, notes:noteOw};
+    }
+    if((m = t.match(/^(.+?)\s+video\s+(\d+)\s+earned\s+(?:a\s+|an\s+)?\$?([\d,.]+)\s*(bonus|cpm|referral)?/i))){
+      var brandEv = findBrand(m[1]);
+      var amountEv = Number(m[3].replace(/,/g,""));
+      var kindEv = (m[4]||"bonus").toLowerCase();
+      var typeEv = kindEv==="cpm" ? "CPM" : (kindEv==="referral" ? "Referral" : "Bonus");
+      return {action:"log_payment", brand:brandEv, amount:amountEv, status:"Pending", type:typeEv, notes:"Video "+m[2]+" "+typeEv.toLowerCase()};
+    }
+    if((m = t.match(/^(.+?)\s+earned\s+(?:a\s+|an\s+)?\$?([\d,.]+)\s*(bonus|cpm|referral)?/i))){
+      var brandE2 = findBrand(m[1]);
+      var amountE2 = Number(m[2].replace(/,/g,""));
+      var kindE2 = (m[3]||"").toLowerCase();
+      var typeE2 = kindE2==="cpm" ? "CPM" : (kindE2==="referral" ? "Referral" : (kindE2==="bonus" ? "Bonus" : "Other"));
+      return {action:"log_payment", brand:brandE2, amount:amountE2, status:"Pending", type:typeE2};
+    }
+    if((m = t.match(/^move\s+(.+?)\s+to\s+(\w+)$/i))){
+      var item3 = findContentByQuery(m[1]);
+      var stage = STAGE_MAP[m[2].toLowerCase()];
+      if(item3 && stage) return {action:"move_stage", contentId:item3.__id, stage:stage};
+      return {action:"unknown", reason:"couldn't match the video or stage in \""+t+"\""};
+    }
+    if((m = t.match(/^(.+?)\s+is\s+approved\.?$/i)) || (m = t.match(/^approve\s+(.+)$/i))){
+      var itemAp = findContentByQuery(m[1]);
+      if(itemAp) return {action:"set_approval", contentId:itemAp.__id, approvalStatus:"Approved"};
+      return {action:"unknown", reason:"couldn't find a matching video for \""+m[1]+"\""};
+    }
+    if((m = t.match(/^(.+?)\s+needs\s+revisions?\.?$/i)) || (m = t.match(/^(.+?)\s+(?:was\s+)?rejected\.?$/i))){
+      var itemRv = findContentByQuery(m[1]);
+      if(itemRv) return {action:"set_approval", contentId:itemRv.__id, approvalStatus:"Revisions Needed"};
+      return {action:"unknown", reason:"couldn't find a matching video for \""+m[1]+"\""};
+    }
+    if((m = t.match(/^(.+?)\s+is\s+(?:pending|awaiting)\s+approval\.?$/i)) || (m = t.match(/^(.+?)\s+(?:was\s+)?submitted\s+for\s+approval\.?$/i))){
+      var itemPd = findContentByQuery(m[1]);
+      if(itemPd) return {action:"set_approval", contentId:itemPd.__id, approvalStatus:"Pending"};
+      return {action:"unknown", reason:"couldn't find a matching video for \""+m[1]+"\""};
+    }
+    if((m = t.match(/^add\s+task:?\s*(.+)$/i))){
+      var txt = m[1];
+      var cat = "FollowUp";
+      if(/\bfilm(ing)?\b/i.test(txt)) cat="Film";
+      else if(/\bedit(ing)?\b/i.test(txt)) cat="Edit";
+      else if(/\bsubmit/i.test(txt)) cat="Submit";
+      else if(/\bpost(ing)?\b/i.test(txt)) cat="Post";
+      var due = "";
+      if(/\btomorrow\b/i.test(txt)) due = addDays(todayStr(),1);
+      else if(/\btoday\b/i.test(txt)) due = todayStr();
+      return {action:"add_task", category:cat, text:txt, dueDate:due};
+    }
+    return {action:"unknown", reason:"couldn't understand that phrasing"};
+  }
+
+  async function applyAction(result){
+    if(!result || result.action==="unknown"){
+      quLog("Not sure what to do — "+((result&&result.reason)||"try rephrasing")+".", false);
+      return;
+    }
+    try{
+      if(result.action==="move_stage"){
+        var item = result.contentId ? state.content.find(function(c){return c.__id===result.contentId;}) : findContentByQuery((result.brand||"")+" "+(result.nameQuery||""));
+        if(!item){ quLog("Couldn't find that video.", false); return; }
+        var patch = {status: result.stage};
+        if(result.stage==="POSTED" && !item.postedDate) patch.postedDate = todayStr();
+        await db.collection("content").doc(item.__id).update(patch);
+        quLog("Moved \""+item.name+"\" to "+result.stage+".", true);
+      } else if(result.action==="set_views"){
+        var item2 = result.contentId ? state.content.find(function(c){return c.__id===result.contentId;}) : findContentByQuery((result.brand||"")+" "+(result.nameQuery||""));
+        if(!item2){ quLog("Couldn't find that video.", false); return; }
+        await db.collection("content").doc(item2.__id).update({views: Number(result.views)||0});
+        quLog("Set \""+item2.name+"\" to "+Number(result.views).toLocaleString()+" views.", true);
+      } else if(result.action==="log_payment"){
+        var brand = result.brand || "Unknown";
+        var payStatus = result.status || "Pending";
+        var payPatch = {brand:brand, type:result.type||"Base", amount:Number(result.amount)||0, status:payStatus, notes:result.notes||""};
+        // Track earned vs. paid dates separately — a "paid me" update logs
+        // today as the pay date; anything else (owed/earned but not yet
+        // received) logs today as the earned date instead.
+        if(payStatus==="Paid") payPatch.datePaid = todayStr();
+        else payPatch.dateEarned = todayStr();
+        await db.collection("payments").add(payPatch);
+        quLog("Logged "+fmtMoney(result.amount)+" ("+payStatus+") from "+brand+".", true);
+      } else if(result.action==="add_task"){
+        var cat = TASK_CATS.indexOf(result.category)>-1 ? result.category : "FollowUp";
+        await db.collection("tasks").add({category:cat, text:result.text, dueDate:result.dueDate||"", brand:result.brand||"", done:false});
+        quLog("Added task to "+TASK_LABEL[cat]+": \""+result.text+"\".", true);
+      } else if(result.action==="post_video"){
+        var item3 = result.contentId ? state.content.find(function(c){return c.__id===result.contentId;}) : findContentByQuery((result.brand||"")+" "+(result.nameQuery||""));
+        if(!item3){ quLog("Couldn't find that video.", false); return; }
+        await db.collection("content").doc(item3.__id).update({status:"POSTED", postedDate: item3.postedDate||todayStr()});
+        quLog("Marked \""+item3.name+"\" as posted.", true);
+      } else if(result.action==="set_approval"){
+        var item4 = result.contentId ? state.content.find(function(c){return c.__id===result.contentId;}) : findContentByQuery((result.brand||"")+" "+(result.nameQuery||""));
+        if(!item4){ quLog("Couldn't find that video.", false); return; }
+        var apPatch = {approvalStatus: result.approvalStatus};
+        // Conservative auto-advance: only bump the pipeline stage forward when
+        // a video that's sitting in APPROVAL gets marked Approved — never
+        // invents a stage change for any other transition.
+        if(result.approvalStatus==="Approved" && item4.status==="APPROVAL") apPatch.status = "READY";
+        await db.collection("content").doc(item4.__id).update(apPatch);
+        quLog("Set \""+item4.name+"\" approval to "+result.approvalStatus+(apPatch.status?" and moved it to READY":"")+".", true);
+      } else {
+        quLog("Not sure what to do with that.", false);
+      }
+    }catch(e){ quLog("Something went wrong saving that update.", false); }
+  }
+
+  window.submitQuickUpdate = async function(){
+    var input = document.getElementById("qu-input");
+    var text = input.value.trim();
+    if(!text) return;
+    if(!db){ toast("No data connection — can't process that", true); return; }
+    input.value = "";
+    var result = null;
+    if(sampleFn){
+      try{
+        var contentList = state.content.map(function(c){ return {id:c.__id, brand:c.brand, name:c.name, status:c.status}; }).slice(0,300);
+        var dealBrands = state.deals.map(function(d){ return d.brand; });
+        var prompt = "You are the parser for a UGC creator's operations tracker. Convert the user's short natural-language update into exactly ONE JSON object (no markdown fences, no extra text) matching one of these shapes:\n"+
+          '{"action":"move_stage","contentId":"<id from the known videos list, or null>","stage":"IDEA|FILM|EDIT|SUBMIT|APPROVAL|READY|POSTED"}\n'+
+          '{"action":"set_views","contentId":"<id>","views":<number>}\n'+
+          '{"action":"set_approval","contentId":"<id>","approvalStatus":"Not Submitted|Pending|Approved|Revisions Needed"}\n'+
+          '{"action":"log_payment","brand":"<brand>","amount":<number>,"status":"Expected|Pending|Paid","type":"Base|CPM|Bonus|Per Video|Referral|Other","notes":""}\n'+
+          '{"action":"add_task","category":"Film|Edit|Submit|Post|FollowUp","text":"<short task text>","dueDate":"YYYY-MM-DD or empty string","brand":"<brand or empty>"}\n'+
+          '{"action":"unknown","reason":"<short reason you could not map it>"}\n'+
+          "Rules: 'posted X' or moving something to the end of the pipeline means move_stage to POSTED. 'X is approved' / 'approve X' means set_approval Approved. 'X needs revisions' or 'X was rejected' means set_approval Revisions Needed. 'X is pending approval' or 'X was submitted for approval' means set_approval Pending. For money: 'X paid me $Y' means log_payment status Paid; 'X owes me $Y' or 'X earned a $Y bonus/CPM/referral' means log_payment status Pending (earned but not yet received) with the type that best matches what was said (a specific per-video mention → Per Video, 'bonus' → Bonus, 'CPM' → CPM, 'referral' → Referral, otherwise Base or Other). Never invent a payment amount that wasn't stated — only log_payment when the user states a concrete dollar amount they earned, are owed, or received. Match videos to the known videos list by brand + video number/name; if nothing matches well, use action unknown. \"tomorrow\" and \"today\" are relative to today's date given below.\n"+
+          "Known deal brands: "+JSON.stringify(dealBrands)+"\n"+
+          "Known videos: "+JSON.stringify(contentList)+"\n"+
+          "Today's date: "+todayStr()+"\n"+
+          'User update: "'+text.replace(/"/g,"'")+'"\n'+
+          "Respond with ONLY the JSON object.";
+        result = await sampleFn.json(prompt, {modelTier:"quick", cache:false});
+      }catch(e){ result = null; }
+    }
+    if(!result){ result = regexParse(text); }
+    await applyAction(result);
+  };
+  document.getElementById("qu-input").addEventListener("keydown", function(e){ if(e.key==="Enter") submitQuickUpdate(); });
+
+  // ===================================================================
+  render();
+  initDb();
+})();
+</script>
